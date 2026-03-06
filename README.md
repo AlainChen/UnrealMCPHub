@@ -24,19 +24,37 @@ AI Agent ──► UnrealMCPHub ──► UE Editor + RemoteMCP plugin
 - **Session notes** — Persist context for crash recovery
 - **One-click overview** — `hub_status` shows project, plugin, instances, and watcher state
 
-## Quick Install (30 seconds)
+## Quick Install
 
-**Zero-clone — install directly from GitHub, no git clone needed:**
+### Option A: Zero-install (just add config)
 
-```bash
-# Option A: uv (recommended)
-uv tool install git+https://github.com/blackplume233/UnrealMCPHub.git
+No download, no clone, no install. Paste this single block into `.cursor/mcp.json` and restart Cursor:
 
-# Option B: pip
-pip install git+https://github.com/blackplume233/UnrealMCPHub.git
+```json
+{
+  "mcpServers": {
+    "unrealhub": {
+      "command": "uvx",
+      "args": [
+        "--from", "git+https://github.com/blackplume233/UnrealMCPHub.git",
+        "unrealhub", "serve"
+      ]
+    }
+  }
+}
 ```
 
-Then add one block to your Cursor MCP config (`.cursor/mcp.json`) and you're done:
+> Requires [uv](https://docs.astral.sh/uv/getting-started/installation/) (`pip install uv` or `winget install astral-sh.uv`). Cursor will auto-fetch the Hub on first launch.
+
+### Option B: Install once, then configure
+
+```bash
+# uv (recommended)
+uv tool install git+https://github.com/blackplume233/UnrealMCPHub.git
+
+# or pip
+pip install git+https://github.com/blackplume233/UnrealMCPHub.git
+```
 
 ```json
 {
@@ -49,15 +67,24 @@ Then add one block to your Cursor MCP config (`.cursor/mcp.json`) and you're don
 }
 ```
 
-That's it. Restart Cursor and the agent can manage your entire UE workflow.
+### Option C: Clone for development
 
-> **Alternative: clone + local install**
-> ```bash
-> git clone https://github.com/blackplume233/UnrealMCPHub.git
-> cd UnrealMCPHub
-> uv sync          # or: pip install -e .
-> ```
-> Then use `"command": "uv", "args": ["--directory", "/path/to/UnrealMCPHub", "run", "unrealhub", "serve"]` in MCP config.
+```bash
+git clone https://github.com/blackplume233/UnrealMCPHub.git
+cd UnrealMCPHub
+uv sync          # or: pip install -e .
+```
+
+```json
+{
+  "mcpServers": {
+    "unrealhub": {
+      "command": "uv",
+      "args": ["--directory", "/path/to/UnrealMCPHub", "run", "unrealhub", "serve"]
+    }
+  }
+}
+```
 
 ## Quick Start
 
