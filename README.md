@@ -2,7 +2,15 @@
 
 Central management platform for Unreal Engine MCP instances — bridge between AI agents and UE across the full development lifecycle.
 
-Even when UE Editor is **not running**, the Hub can compile, install plugins, and launch the editor. Once UE is up, it transparently proxies all MCP tools to the running instance.
+Works with **[RemoteMCP](https://github.com/blackplume233/UnrealRemoteMCP)** (UE Editor plugin that exposes engine capabilities via MCP protocol). The Hub manages everything around it: install the plugin, compile, launch the editor, detect crashes, and transparently proxy all tool calls — so the AI agent only needs one MCP endpoint.
+
+```
+AI Agent ──► UnrealMCPHub ──► UE Editor + RemoteMCP plugin
+              (this repo)       (blackplume233/UnrealRemoteMCP)
+```
+
+> **RemoteMCP** runs **inside** UE Editor and provides 17+ tools across 6 domains (level, blueprint, umg, edgraph, behaviortree, slate).
+> **UnrealMCPHub** runs **outside** UE Editor and can compile, launch, monitor, and proxy — even when UE is not running.
 
 ## Features
 
@@ -196,7 +204,8 @@ uv run pytest tests/ -v  # Run tests (129 tests)
 ## Requirements
 
 - Python >= 3.11
-- Unreal Engine 5.x with [RemoteMCP](https://github.com/blackplume233/UnrealRemoteMCP) plugin
+- Unreal Engine 5.x
+- [RemoteMCP](https://github.com/blackplume233/UnrealRemoteMCP) — UE Editor plugin (Hub can auto-install it via `install_plugin`)
 
 ## License
 
