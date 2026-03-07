@@ -22,7 +22,7 @@ def register_proxy_tools(mcp: FastMCP, get_state, get_client) -> None:
         if active and active.status == "crashed":
             return (
                 f"UE instance '{active.auto_id}' has CRASHED.\n"
-                f"Use get_crash_report() for details, or restart_editor() to restart.\n"
+                f"Use get_log(source='crash') for details, or launch_editor(action='restart') to restart.\n"
                 f"\n{summary}"
             )
         return (
@@ -89,12 +89,21 @@ def register_proxy_tools(mcp: FastMCP, get_state, get_client) -> None:
         return "\n".join(lines)
 
     @mcp.tool()
-    async def ue_list_tools() -> str:
-        """Get the complete tool list from the active UE instance (including parameter schemas).
-        Use this to discover available tools before calling ue_call()."""
+    async def ue_list_tools(domain: str = "") -> str:
+        """List available tools from the active UE instance.
+
+        domain: If empty, lists all MCP-level tools with parameter schemas.
+                If specified, queries the dispatch system for tools in that domain.
+
+        Use this to discover available tools before calling ue_call().
+        """
         client = get_client(None)
         if not client:
             return _offline_message()
+
+        if domain:
+            result = await client.call_tool("get_dispatch", {"domain": domain})
+            return _format_tool_result(result)
 
         state = get_state()
         active = state.get_active_instance()
@@ -133,11 +142,15 @@ def register_proxy_tools(mcp: FastMCP, get_state, get_client) -> None:
         return "\n".join(lines)
 
     @mcp.tool()
-    async def ue_call(tool_name: str, arguments: dict | None = None) -> str:
-        """Call any tool on the active UE instance.
+    async def ue_call(
+        tool_name: str, arguments: dict | None = None, domain: str = ""
+    ) -> str:
+        """Call a tool on the active UE instance.
 
-        tool_name: Name of the UE tool to call (e.g. 'search_console_commands').
+        tool_name: Name of the tool (e.g. 'search_console_commands').
         arguments: Tool arguments as a dict (e.g. {"keyword": "stat"}).
+        domain: If specified, calls via the dispatch system (e.g. 'level', 'blueprint').
+                If empty, calls the tool directly.
 
         Use ue_list_tools() first to see available tools and their parameter schemas.
         """
@@ -147,13 +160,26 @@ def register_proxy_tools(mcp: FastMCP, get_state, get_client) -> None:
 
         state = get_state()
         active = state.get_active_instance()
-
         start = time.time()
-        result = await client.call_tool(tool_name, arguments or {})
+
+        if domain:
+            result = await client.call_tool(
+                "call_dispatch_tool",
+                {
+                    "domain": domain,
+                    "tool_name": tool_name,
+                    "arguments": json.dumps(arguments) if arguments else "{}",
+                },
+            )
+            log_name = f"{domain}/{tool_name}"
+        else:
+            result = await client.call_tool(tool_name, arguments or {})
+            log_name = tool_name
+
         duration = (time.time() - start) * 1000
 
         if active:
-            state.record_tool_call(active.auto_id, tool_name, result["success"], duration)
+            state.record_tool_call(active.auto_id, log_name, result["success"], duration)
             state.save()
 
         return _format_tool_result(result)
@@ -161,7 +187,7 @@ def register_proxy_tools(mcp: FastMCP, get_state, get_client) -> None:
     @mcp.tool()
     async def ue_run_python(script: str) -> str:
         """Execute a Python script in the UE Editor. The 'result' variable will be returned.
-        Operates on the active instance (switch with use_editor)."""
+        Operates on the active instance (switch with manage_instance(action='use'))."""
         client = get_client(None)
         if not client:
             return _offline_message()
@@ -181,71 +207,3 @@ def register_proxy_tools(mcp: FastMCP, get_state, get_client) -> None:
 
         return _format_tool_result(result)
 
-    @mcp.tool()
-    async def ue_get_dispatch(domain: str = "") -> str:
-        """Get domain tool list from the active UE instance.
-        If domain is empty, returns all available domains.
-        If domain is specified, returns tools in that domain with their parameters."""
-        client = get_client(None)
-        if not client:
-            return _offline_message()
-
-        args = {"domain": domain} if domain else {}
-        result = await client.call_tool("get_dispatch", args)
-        return _format_tool_result(result)
-
-    @mcp.tool()
-    async def ue_call_dispatch(
-        domain: str, tool_name: str, arguments: dict | None = None
-    ) -> str:
-        """Call a domain tool on the active UE instance.
-
-        domain: Domain name (e.g. 'level', 'blueprint', 'slate').
-        tool_name: Tool name within the domain.
-        arguments: Tool arguments as a dict.
-        """
-        client = get_client(None)
-        if not client:
-            return _offline_message()
-
-        state = get_state()
-        active = state.get_active_instance()
-
-        start = time.time()
-        result = await client.call_tool(
-            "call_dispatch_tool",
-            {
-                "domain": domain,
-                "tool_name": tool_name,
-                "arguments": json.dumps(arguments) if arguments else "{}",
-            },
-        )
-        duration = (time.time() - start) * 1000
-
-        if active:
-            state.record_tool_call(
-                active.auto_id, f"{domain}/{tool_name}", result["success"], duration
-            )
-            state.save()
-
-        return _format_tool_result(result)
-
-    @mcp.tool()
-    async def ue_test_state() -> str:
-        """Test the connection to the active UE instance."""
-        client = get_client(None)
-        if not client:
-            return _offline_message()
-
-        result = await client.call_tool("test_engine_state", {})
-        return _format_tool_result(result)
-
-    @mcp.tool()
-    async def ue_get_project_dir() -> str:
-        """Get the UE project directory from the active instance."""
-        client = get_client(None)
-        if not client:
-            return _offline_message()
-
-        result = await client.call_tool("get_project_dir", {})
-        return _format_tool_result(result)

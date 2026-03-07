@@ -71,14 +71,25 @@ def create_hub_mcp() -> FastMCP:
 
     @mcp.tool()
     async def setup_project(
-        uproject_path: str, engine_root: str = "", name: str = "", port: int = 8422
+        uproject_path: str,
+        engine_root: str = "",
+        name: str = "",
+        port: int = 8422,
+        install_plugin: bool = True,
+        plugin_repo: str = "",
+        plugin_local_path: str = "",
     ) -> str:
-        """Configure a UE project for Hub management. Only needs to be done once per project.
+        """One-stop project onboarding: configure project and install RemoteMCP plugin.
 
         uproject_path: Full path to the .uproject file (required).
         engine_root: Engine installation root (auto-detected from .uproject if empty).
         name: Project name (auto-detected from filename if empty).
         port: MCP port for this project (default 8422).
+        install_plugin: Auto-install RemoteMCP plugin, enable it, and install Python deps (default True).
+        plugin_repo: GitHub zip URL for RemoteMCP plugin (optional, configures download source).
+        plugin_local_path: Local path to RemoteMCP directory (optional, highest install priority).
+
+        After setup, run build_project() then launch_editor() to start working.
         """
         from pathlib import Path
         from unrealhub.utils.ue_paths import UEPathResolver
@@ -130,6 +141,27 @@ def create_hub_mcp() -> FastMCP:
         if missing:
             lines.append(f"\n  Warnings (missing paths): {', '.join(missing)}")
 
+        if plugin_repo:
+            config.set_plugin_repo(plugin_repo)
+            lines.append(f"\n  Plugin repo: {plugin_repo}")
+
+        if plugin_local_path:
+            p = Path(plugin_local_path)
+            if p.is_dir() and (p / "RemoteMCP.uplugin").exists():
+                config.set_plugin_cache(plugin_local_path)
+                lines.append(f"  Plugin local path: {plugin_local_path}")
+            else:
+                lines.append(f"  WARNING: Invalid plugin_local_path (no RemoteMCP.uplugin): {plugin_local_path}")
+
+        if install_plugin:
+            from unrealhub.tools.install_tools import perform_install_plugin
+            lines.append("\n--- Plugin Install ---")
+            install_result = await perform_install_plugin(config, str(uproject))
+            lines.append(install_result)
+            lines.append("\nNext steps:")
+            lines.append("1. build_project() — compile the project")
+            lines.append("2. launch_editor() — start the editor")
+
         return "\n".join(lines)
 
     @mcp.tool()
@@ -155,10 +187,6 @@ def create_hub_mcp() -> FastMCP:
         lines.append(f"\nActive project: {active_name or '(none)'}")
         return "\n".join(lines)
 
-    @mcp.tool()
-    async def list_known_projects() -> str:
-        """List all configured projects."""
-        return await get_project_config()
 
     @mcp.tool()
     async def remove_project(name: str) -> str:
@@ -212,7 +240,7 @@ def create_hub_mcp() -> FastMCP:
                 has_deps = (python_dir / "Lib" / "site-packages" / "mcp").exists()
                 sections.append(f"  Python deps: {'INSTALLED' if has_deps else 'MISSING'}")
             else:
-                sections.append("  Directory: NOT FOUND (run install_plugin)")
+                sections.append("  Directory: NOT FOUND (run setup_project to install)")
         else:
             sections.append("  (no active project)")
 
@@ -234,6 +262,10 @@ def create_hub_mcp() -> FastMCP:
                 sections.append(f"    Last seen: {inst.last_seen or 'never'}")
                 if inst.crash_count:
                     sections.append(f"    Crashes: {inst.crash_count}")
+                sections.append(
+                    f"    Tool calls: {len(inst.call_history)}, "
+                    f"Notes: {len(inst.notes)}"
+                )
         else:
             sections.append("  No instances registered. Run discover_instances().")
 
@@ -251,6 +283,7 @@ def create_hub_mcp() -> FastMCP:
     from unrealhub.tools.install_tools import register_install_tools
     from unrealhub.tools.discovery_tools import register_discovery_tools
     from unrealhub.tools.monitor_tools import register_monitor_tools
+    from unrealhub.tools.log_tools import register_log_tools
     from unrealhub.tools.proxy_tools import register_proxy_tools
     from unrealhub.tools.session_tools import register_session_tools
 
@@ -259,6 +292,7 @@ def create_hub_mcp() -> FastMCP:
     register_install_tools(mcp, get_config)
     register_discovery_tools(mcp, get_config, get_state)
     register_monitor_tools(mcp, get_state, get_watcher)
+    register_log_tools(mcp, get_config, get_state)
     register_proxy_tools(mcp, get_state, get_client)
     register_session_tools(mcp, get_state)
 

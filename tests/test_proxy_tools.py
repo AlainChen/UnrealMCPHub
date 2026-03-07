@@ -23,132 +23,172 @@ def _make_proxy_module():
     return mcp, store, get_client
 
 
-class TestFormatToolResult:
-    """Test _format_tool_result indirectly through ue_call."""
+def _make_online_proxy():
+    """Create proxy tools with a mocked online UE instance."""
+    from mcp.server.fastmcp import FastMCP
+    mcp = FastMCP("test")
 
-    @pytest.mark.asyncio
-    async def test_offline_message(self, tmp_home):
+    active = MagicMock()
+    active.auto_id = "ue1"
+    active.status = "online"
+    active.alias = None
+    active.url = "http://localhost:8422/mcp"
+    active.pid = 1234
+    active.project_path = "/test"
+    active.crash_count = 0
+    active.last_seen = "now"
+
+    store = MagicMock(spec=StateStore)
+    store.get_active_instance.return_value = active
+
+    mock_client = AsyncMock()
+    get_client = MagicMock(return_value=mock_client)
+
+    from unrealhub.tools.proxy_tools import register_proxy_tools
+    register_proxy_tools(mcp, lambda: store, get_client)
+
+    tools = {t.name: t.fn for t in mcp._tool_manager.list_tools()}
+    return tools, mock_client, store
+
+
+class TestRegisteredTools:
+    def test_expected_tools_registered(self, tmp_home):
         mcp, store, get_client = _make_proxy_module()
-        tools = {t.name: t for t in mcp._tool_manager.list_tools()}
-        assert "ue_status" in tools
+        tool_names = {t.name for t in mcp._tool_manager.list_tools()}
+        assert tool_names == {"ue_status", "ue_list_tools", "ue_call", "ue_run_python"}
 
+    def test_removed_tools_not_present(self, tmp_home):
+        mcp, store, get_client = _make_proxy_module()
+        tool_names = {t.name for t in mcp._tool_manager.list_tools()}
+        for removed in ["ue_test_state", "ue_get_project_dir", "ue_get_dispatch", "ue_call_dispatch"]:
+            assert removed not in tool_names
+
+
+class TestUeCall:
     @pytest.mark.asyncio
-    async def test_ue_call_none_arguments(self, tmp_home):
+    async def test_none_arguments(self, tmp_home):
         """arguments=None should be treated as empty dict."""
-        from mcp.server.fastmcp import FastMCP
-        mcp = FastMCP("test")
-
-        active = MagicMock()
-        active.auto_id = "ue1"
-        active.status = "online"
-        active.alias = None
-        active.url = "http://localhost:8422/mcp"
-        active.pid = 1234
-        active.project_path = "/test"
-        active.crash_count = 0
-        active.last_seen = "now"
-
-        store = MagicMock(spec=StateStore)
-        store.get_active_instance.return_value = active
-
-        mock_client = AsyncMock()
+        tools, mock_client, store = _make_online_proxy()
         mock_client.call_tool = AsyncMock(return_value={
             "success": True,
             "content": [{"type": "text", "text": "ok"}],
             "error": None,
         })
-        get_client = MagicMock(return_value=mock_client)
-
-        from unrealhub.tools.proxy_tools import register_proxy_tools
-        register_proxy_tools(mcp, lambda: store, get_client)
-
-        tools = {t.name: t.fn for t in mcp._tool_manager.list_tools()}
         result = await tools["ue_call"]("test_tool", None)
         assert "ok" in result
         mock_client.call_tool.assert_called_once_with("test_tool", {})
 
-
-class TestProxyFormatting:
-    """Test formatting of proxy tool results by calling internal formatting via ue_call."""
+    @pytest.mark.asyncio
+    async def test_direct_call(self, tmp_home):
+        """ue_call without domain calls tool directly."""
+        tools, mock_client, store = _make_online_proxy()
+        mock_client.call_tool = AsyncMock(return_value={
+            "success": True,
+            "content": [{"type": "text", "text": "direct result"}],
+            "error": None,
+        })
+        result = await tools["ue_call"]("some_tool", {"key": "val"})
+        assert "direct result" in result
+        mock_client.call_tool.assert_called_once_with("some_tool", {"key": "val"})
 
     @pytest.mark.asyncio
+    async def test_dispatch_call(self, tmp_home):
+        """ue_call with domain routes through call_dispatch_tool."""
+        tools, mock_client, store = _make_online_proxy()
+        mock_client.call_tool = AsyncMock(return_value={
+            "success": True,
+            "content": [{"type": "text", "text": "dispatch result"}],
+            "error": None,
+        })
+        result = await tools["ue_call"]("get_actors", {"class": "Static"}, "level")
+        assert "dispatch result" in result
+        mock_client.call_tool.assert_called_once_with(
+            "call_dispatch_tool",
+            {
+                "domain": "level",
+                "tool_name": "get_actors",
+                "arguments": '{"class": "Static"}',
+            },
+        )
+
+    @pytest.mark.asyncio
+    async def test_dispatch_records_domain_tool_name(self, tmp_home):
+        """Tool call history should record domain/tool_name for dispatch calls."""
+        tools, mock_client, store = _make_online_proxy()
+        mock_client.call_tool = AsyncMock(return_value={
+            "success": True,
+            "content": [{"type": "text", "text": "ok"}],
+            "error": None,
+        })
+        await tools["ue_call"]("spawn", None, "level")
+        store.record_tool_call.assert_called_once()
+        call_args = store.record_tool_call.call_args
+        assert call_args[0][1] == "level/spawn"
+
+
+class TestUeListTools:
+    @pytest.mark.asyncio
+    async def test_list_mcp_tools(self, tmp_home):
+        """ue_list_tools() without domain lists MCP-level tools."""
+        tools, mock_client, store = _make_online_proxy()
+        mock_client.list_tools = AsyncMock(return_value=[
+            {"name": "run_python_script", "description": "Run Python", "inputSchema": {"properties": {}}},
+        ])
+        result = await tools["ue_list_tools"]()
+        assert "run_python_script" in result
+
+    @pytest.mark.asyncio
+    async def test_list_domain_tools(self, tmp_home):
+        """ue_list_tools(domain='level') queries dispatch system."""
+        tools, mock_client, store = _make_online_proxy()
+        mock_client.call_tool = AsyncMock(return_value={
+            "success": True,
+            "content": [{"type": "text", "text": "level domain: get_actors, spawn_actor"}],
+            "error": None,
+        })
+        result = await tools["ue_list_tools"]("level")
+        assert "level domain" in result
+        mock_client.call_tool.assert_called_once_with("get_dispatch", {"domain": "level"})
+
+
+class TestProxyFormatting:
+    @pytest.mark.asyncio
     async def test_format_success_text(self, tmp_home):
-        from mcp.server.fastmcp import FastMCP
-        mcp = FastMCP("test")
-
-        active = MagicMock()
-        active.auto_id = "ue1"
-        active.status = "online"
-
-        store = MagicMock(spec=StateStore)
-        store.get_active_instance.return_value = active
-
-        mock_client = AsyncMock()
+        tools, mock_client, store = _make_online_proxy()
         mock_client.call_tool = AsyncMock(return_value={
             "success": True,
             "content": [{"type": "text", "text": "hello world"}],
             "error": None,
         })
-        get_client = MagicMock(return_value=mock_client)
-
-        from unrealhub.tools.proxy_tools import register_proxy_tools
-        register_proxy_tools(mcp, lambda: store, get_client)
-
-        tools = {t.name: t.fn for t in mcp._tool_manager.list_tools()}
         result = await tools["ue_call"]("some_tool", {})
         assert "hello world" in result
 
     @pytest.mark.asyncio
     async def test_format_error(self, tmp_home):
-        from mcp.server.fastmcp import FastMCP
-        mcp = FastMCP("test")
-
-        active = MagicMock()
-        active.auto_id = "ue1"
-        active.status = "online"
-
-        store = MagicMock(spec=StateStore)
-        store.get_active_instance.return_value = active
-
-        mock_client = AsyncMock()
+        tools, mock_client, store = _make_online_proxy()
         mock_client.call_tool = AsyncMock(return_value={
             "success": False,
             "content": [],
             "error": "Something broke",
         })
-        get_client = MagicMock(return_value=mock_client)
-
-        from unrealhub.tools.proxy_tools import register_proxy_tools
-        register_proxy_tools(mcp, lambda: store, get_client)
-
-        tools = {t.name: t.fn for t in mcp._tool_manager.list_tools()}
         result = await tools["ue_call"]("bad_tool", {})
         assert "Something broke" in result
 
     @pytest.mark.asyncio
     async def test_format_image(self, tmp_home):
-        from mcp.server.fastmcp import FastMCP
-        mcp = FastMCP("test")
-
-        active = MagicMock()
-        active.auto_id = "ue1"
-        active.status = "online"
-
-        store = MagicMock(spec=StateStore)
-        store.get_active_instance.return_value = active
-
-        mock_client = AsyncMock()
+        tools, mock_client, store = _make_online_proxy()
         mock_client.call_tool = AsyncMock(return_value={
             "success": True,
             "content": [{"type": "image", "mimeType": "image/png", "data": "abc123"}],
             "error": None,
         })
-        get_client = MagicMock(return_value=mock_client)
-
-        from unrealhub.tools.proxy_tools import register_proxy_tools
-        register_proxy_tools(mcp, lambda: store, get_client)
-
-        tools = {t.name: t.fn for t in mcp._tool_manager.list_tools()}
         result = await tools["ue_call"]("img_tool", {})
         assert "Image" in result
         assert "image/png" in result
+
+    @pytest.mark.asyncio
+    async def test_offline_message(self, tmp_home):
+        mcp, store, get_client = _make_proxy_module()
+        tools = {t.name: t.fn for t in mcp._tool_manager.list_tools()}
+        result = await tools["ue_call"]("any", {})
+        assert "no active" in result.lower() or "online" in result.lower()

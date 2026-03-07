@@ -62,202 +62,29 @@ def _find_local_plugin(config, project_dir: Path) -> str | None:
     return None
 
 
-def register_install_tools(mcp: FastMCP, get_config) -> None:
+async def _run_install_deps(python_dir: Path) -> str:
+    """Run env.bat to install Python dependencies. Returns status message."""
+    env_bat = python_dir / "env.bat"
+    if not env_bat.exists():
+        return "Python deps: env.bat not found, install manually."
 
-    @mcp.tool()
-    async def install_plugin(
-        target_project: str = "",
-        plugin_source: str = "",
-    ) -> str:
-        """Install the RemoteMCP plugin to a UE project.
-
-        target_project: Path to .uproject file. Defaults to active project.
-        plugin_source: Path to local RemoteMCP directory. If empty, auto-detects
-                       locally first; if not found, downloads from configured GitHub repo.
-        """
-        config = get_config()
-
-        if not target_project:
-            proj = config.get_active_project()
-            if not proj:
-                return (
-                    "No target project specified and no active project configured. "
-                    "Call setup_project() first."
-                )
-            target_project = proj.uproject_path
-
-        target_path = Path(target_project)
-        if not target_path.exists():
-            return f".uproject not found: {target_project}"
-
-        project_dir = target_path.parent
-        plugins_dir = project_dir / "Plugins"
-        dest_dir = plugins_dir / "RemoteMCP"
-
-        if dest_dir.exists() and (dest_dir / "RemoteMCP.uplugin").exists():
-            return (
-                f"RemoteMCP already installed at: {dest_dir}\n"
-                "Use check_plugin_status() to verify."
-            )
-
-        # --- Tier 1: user-provided path ---
-        if plugin_source:
-            source_path = Path(plugin_source)
-            if not (source_path / "RemoteMCP.uplugin").exists():
-                return f"Invalid plugin source (no RemoteMCP.uplugin): {plugin_source}"
-            return _copy_and_enable(source_path, dest_dir, target_path)
-
-        # --- Tier 2: local auto-detect (sibling dir / cache) ---
-        local = _find_local_plugin(config, project_dir)
-        if local:
-            return _copy_and_enable(Path(local), dest_dir, target_path)
-
-        # --- Tier 3: download from GitHub ---
-        repo_url = config.get_plugin_repo()
-        download_msg = f"Downloading RemoteMCP from:\n  {repo_url}\n"
-
-        extracted = await _download_plugin_zip(repo_url)
-        if not extracted:
-            return (
-                f"{download_msg}"
-                "Download FAILED. Check your network or use set_plugin_source() "
-                "to configure a different repo URL or local path."
-            )
-
-        config.set_plugin_cache(str(extracted))
-        result = _copy_and_enable(extracted, dest_dir, target_path)
-        return f"{download_msg}Download OK.\n\n{result}"
-
-    @mcp.tool()
-    async def set_plugin_source(repo_url: str = "", local_path: str = "") -> str:
-        """Configure the RemoteMCP plugin source.
-
-        repo_url: GitHub zip download URL (leave empty to keep current).
-        local_path: Local RemoteMCP directory path (highest priority when installing).
-
-        Examples:
-          set_plugin_source(repo_url="https://github.com/user/repo/archive/refs/heads/main.zip")
-          set_plugin_source(local_path="D:/Projects/RemoteMCP")
-        """
-        config = get_config()
-        lines = []
-
-        if repo_url:
-            config.set_plugin_repo(repo_url)
-            lines.append(f"Plugin repo URL set to: {repo_url}")
-
-        if local_path:
-            p = Path(local_path)
-            if not p.is_dir() or not (p / "RemoteMCP.uplugin").exists():
-                return f"Invalid local path (no RemoteMCP.uplugin): {local_path}"
-            config.set_plugin_cache(local_path)
-            lines.append(f"Plugin local cache set to: {local_path}")
-
-        if not lines:
-            current_repo = config.get_plugin_repo()
-            current_cache = config.get_plugin_cache()
-            return (
-                f"Current plugin source config:\n"
-                f"  Repo URL: {current_repo}\n"
-                f"  Local cache: {current_cache or '(none)'}"
-            )
-
-        return "\n".join(lines)
-
-    @mcp.tool()
-    async def enable_plugin(target_project: str = "") -> str:
-        """Enable RemoteMCP and PythonScriptPlugin in a .uproject file."""
-        config = get_config()
-        if not target_project:
-            proj = config.get_active_project()
-            if not proj:
-                return "No project configured."
-            target_project = proj.uproject_path
-        return _enable_plugins_in_uproject(target_project)
-
-    @mcp.tool()
-    async def check_plugin_status(target_project: str = "") -> str:
-        """Check if RemoteMCP plugin is installed and enabled."""
-        config = get_config()
-        if not target_project:
-            proj = config.get_active_project()
-            if not proj:
-                return "No project configured."
-            target_project = proj.uproject_path
-
-        target_path = Path(target_project)
-        project_dir = target_path.parent
-        plugin_dir = project_dir / "Plugins" / "RemoteMCP"
-
-        lines = [f"Project: {target_project}"]
-
-        if plugin_dir.exists() and (plugin_dir / "RemoteMCP.uplugin").exists():
-            lines.append("Plugin directory: INSTALLED")
-        else:
-            lines.append("Plugin directory: NOT FOUND")
-            lines.append("  Run install_plugin() to install.")
-            return "\n".join(lines)
-
-        try:
-            with open(target_project, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            plugins_map = {
-                p.get("Name"): p.get("Enabled", False)
-                for p in data.get("Plugins", [])
-                if "Name" in p
-            }
-            for name in ["RemoteMCP", "PythonScriptPlugin"]:
-                if name in plugins_map:
-                    status = "ENABLED" if plugins_map[name] else "DISABLED"
-                else:
-                    status = "NOT IN .uproject"
-                lines.append(f"{name}: {status}")
-        except Exception as e:
-            lines.append(f"Error reading .uproject: {e}")
-
-        python_dir = plugin_dir / "Content" / "Python"
-        if (python_dir / "Lib" / "site-packages" / "mcp").exists():
-            lines.append("Python deps: INSTALLED")
-        else:
-            lines.append("Python deps: NOT FOUND (run install_python_deps)")
-
-        return "\n".join(lines)
-
-    @mcp.tool()
-    async def install_python_deps(target_project: str = "") -> str:
-        """Install Python dependencies for RemoteMCP plugin using uv."""
-        config = get_config()
-        if not target_project:
-            proj = config.get_active_project()
-            if not proj:
-                return "No project configured."
-            target_project = proj.uproject_path
-
-        python_dir = (
-            Path(target_project).parent / "Plugins" / "RemoteMCP" / "Content" / "Python"
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            "cmd", "/c", str(env_bat),
+            cwd=str(python_dir),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.STDOUT,
         )
-        if not python_dir.exists():
-            return "RemoteMCP Python directory not found. Is the plugin installed?"
-
-        env_bat = python_dir / "env.bat"
-        if not env_bat.exists():
-            return "env.bat not found. Install dependencies manually."
-
-        try:
-            proc = await asyncio.create_subprocess_exec(
-                "cmd", "/c", str(env_bat),
-                cwd=str(python_dir),
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.STDOUT,
-            )
-            output, _ = await asyncio.wait_for(proc.communicate(), timeout=120)
-            text = output.decode("utf-8", errors="replace")
-            return f"Exit code: {proc.returncode}\n{text}"
-        except asyncio.TimeoutError:
-            return "install_python_deps timed out after 120 seconds."
-        except Exception as e:
-            logger.exception("install_python_deps failed")
-            return f"Failed to run env.bat: {e}"
+        output, _ = await asyncio.wait_for(proc.communicate(), timeout=120)
+        text = output.decode("utf-8", errors="replace")
+        if proc.returncode == 0:
+            return "Python deps: INSTALLED"
+        return f"Python deps: install FAILED (exit {proc.returncode})\n{text}"
+    except asyncio.TimeoutError:
+        return "Python deps: install timed out (120s)."
+    except Exception as e:
+        logger.exception("_run_install_deps failed")
+        return f"Python deps: install failed: {e}"
 
 
 def _copy_and_enable(source: Path, dest: Path, uproject_path: Path) -> str:
@@ -276,9 +103,6 @@ def _copy_and_enable(source: Path, dest: Path, uproject_path: Path) -> str:
 
     lines = [f"RemoteMCP installed to: {dest}"]
     lines.append(_enable_plugins_in_uproject(str(uproject_path)))
-    lines.append("\nNext steps:")
-    lines.append("1. Run compile_project() to build")
-    lines.append("2. Run launch_editor() to start the editor")
     return "\n".join(lines)
 
 
@@ -308,3 +132,100 @@ def _enable_plugins_in_uproject(uproject_path: str) -> str:
     except Exception as e:
         logger.exception("_enable_plugins_in_uproject failed")
         return f"Failed to update .uproject: {e}"
+
+
+async def perform_install_plugin(config, uproject_path: str) -> str:
+    """Install RemoteMCP plugin to a project. Reusable from setup_project or standalone.
+
+    Handles: already-installed (idempotent), local auto-detect, GitHub download,
+    .uproject enabling, and Python dependency installation.
+    """
+    target_path = Path(uproject_path)
+    if not target_path.exists():
+        return f"Plugin install skipped: .uproject not found at {uproject_path}"
+
+    project_dir = target_path.parent
+    dest_dir = project_dir / "Plugins" / "RemoteMCP"
+
+    if dest_dir.exists() and (dest_dir / "RemoteMCP.uplugin").exists():
+        enable_result = _enable_plugins_in_uproject(str(target_path))
+        python_dir = dest_dir / "Content" / "Python"
+        deps_result = ""
+        if python_dir.exists() and not (python_dir / "Lib" / "site-packages" / "mcp").exists():
+            deps_result = "\n" + await _run_install_deps(python_dir)
+        return f"RemoteMCP already installed at: {dest_dir}\n{enable_result}{deps_result}"
+
+    # --- Tier 1: local auto-detect (sibling dir / cache / config) ---
+    local = _find_local_plugin(config, project_dir)
+    if local:
+        result = _copy_and_enable(Path(local), dest_dir, target_path)
+        deps_result = await _run_install_deps(dest_dir / "Content" / "Python")
+        return f"{result}\n{deps_result}"
+
+    # --- Tier 2: download from GitHub ---
+    repo_url = config.get_plugin_repo()
+    download_msg = f"Downloading RemoteMCP from:\n  {repo_url}\n"
+
+    extracted = await _download_plugin_zip(repo_url)
+    if not extracted:
+        return (
+            f"{download_msg}"
+            "Download FAILED. Check your network or re-run "
+            "setup_project(plugin_repo=...) with a valid URL."
+        )
+
+    config.set_plugin_cache(str(extracted))
+    result = _copy_and_enable(extracted, dest_dir, target_path)
+    deps_result = await _run_install_deps(dest_dir / "Content" / "Python")
+    return f"{download_msg}Download OK.\n\n{result}\n{deps_result}"
+
+
+def register_install_tools(mcp: FastMCP, get_config) -> None:
+
+    @mcp.tool()
+    async def check_plugin_status(target_project: str = "") -> str:
+        """Check if RemoteMCP plugin is installed and enabled."""
+        config = get_config()
+        if not target_project:
+            proj = config.get_active_project()
+            if not proj:
+                return "No project configured."
+            target_project = proj.uproject_path
+
+        target_path = Path(target_project)
+        project_dir = target_path.parent
+        plugin_dir = project_dir / "Plugins" / "RemoteMCP"
+
+        lines = [f"Project: {target_project}"]
+
+        if plugin_dir.exists() and (plugin_dir / "RemoteMCP.uplugin").exists():
+            lines.append("Plugin directory: INSTALLED")
+        else:
+            lines.append("Plugin directory: NOT FOUND")
+            lines.append("  Run setup_project() with install_plugin=True to install.")
+            return "\n".join(lines)
+
+        try:
+            with open(target_project, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            plugins_map = {
+                p.get("Name"): p.get("Enabled", False)
+                for p in data.get("Plugins", [])
+                if "Name" in p
+            }
+            for name in ["RemoteMCP", "PythonScriptPlugin"]:
+                if name in plugins_map:
+                    status = "ENABLED" if plugins_map[name] else "DISABLED"
+                else:
+                    status = "NOT IN .uproject"
+                lines.append(f"{name}: {status}")
+        except Exception as e:
+            lines.append(f"Error reading .uproject: {e}")
+
+        python_dir = plugin_dir / "Content" / "Python"
+        if (python_dir / "Lib" / "site-packages" / "mcp").exists():
+            lines.append("Python deps: INSTALLED")
+        else:
+            lines.append("Python deps: NOT FOUND (run setup_project to install)")
+
+        return "\n".join(lines)
