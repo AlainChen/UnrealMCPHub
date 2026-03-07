@@ -82,7 +82,7 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 |------|------|
 | ue_status | UE 实例在线/离线/崩溃状态 |
 | ue_list_tools | 获取 UE 完整工具列表 (含参数 schema) |
-| ue_call | 通用调用: ue_call(tool_name, arguments_json) |
+| ue_call | 通用调用: ue_call(tool_name, {param: value}) |
 
 ## 使用模式
 
@@ -95,7 +95,7 @@ ue_run_python(script="import unreal; print(unreal.SystemLibrary.get_platform_use
 ### 不常用 UE 工具: 先查再调
 
 1. `ue_list_tools()` -- 查看有哪些工具和参数格式
-2. `ue_call("search_console_commands", '{"keyword": "stat"}')` -- 通过网关调用
+2. `ue_call("search_console_commands", {"keyword": "stat"})` -- 通过网关调用
 
 ### UE 离线时: 快捷工具返回引导
 

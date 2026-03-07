@@ -1,5 +1,4 @@
 """Test the helper functions in proxy_tools (format and offline logic)."""
-import json
 from unittest.mock import MagicMock, AsyncMock, patch
 
 import pytest
@@ -34,7 +33,8 @@ class TestFormatToolResult:
         assert "ue_status" in tools
 
     @pytest.mark.asyncio
-    async def test_ue_call_invalid_json(self, tmp_home):
+    async def test_ue_call_none_arguments(self, tmp_home):
+        """arguments=None should be treated as empty dict."""
         from mcp.server.fastmcp import FastMCP
         mcp = FastMCP("test")
 
@@ -51,15 +51,21 @@ class TestFormatToolResult:
         store = MagicMock(spec=StateStore)
         store.get_active_instance.return_value = active
 
-        mock_client = MagicMock()
+        mock_client = AsyncMock()
+        mock_client.call_tool = AsyncMock(return_value={
+            "success": True,
+            "content": [{"type": "text", "text": "ok"}],
+            "error": None,
+        })
         get_client = MagicMock(return_value=mock_client)
 
         from unrealhub.tools.proxy_tools import register_proxy_tools
         register_proxy_tools(mcp, lambda: store, get_client)
 
         tools = {t.name: t.fn for t in mcp._tool_manager.list_tools()}
-        result = await tools["ue_call"]("test_tool", "NOT_JSON")
-        assert "Invalid JSON" in result
+        result = await tools["ue_call"]("test_tool", None)
+        assert "ok" in result
+        mock_client.call_tool.assert_called_once_with("test_tool", {})
 
 
 class TestProxyFormatting:
@@ -89,7 +95,7 @@ class TestProxyFormatting:
         register_proxy_tools(mcp, lambda: store, get_client)
 
         tools = {t.name: t.fn for t in mcp._tool_manager.list_tools()}
-        result = await tools["ue_call"]("some_tool", "{}")
+        result = await tools["ue_call"]("some_tool", {})
         assert "hello world" in result
 
     @pytest.mark.asyncio
@@ -116,7 +122,7 @@ class TestProxyFormatting:
         register_proxy_tools(mcp, lambda: store, get_client)
 
         tools = {t.name: t.fn for t in mcp._tool_manager.list_tools()}
-        result = await tools["ue_call"]("bad_tool", "{}")
+        result = await tools["ue_call"]("bad_tool", {})
         assert "Something broke" in result
 
     @pytest.mark.asyncio
@@ -143,6 +149,6 @@ class TestProxyFormatting:
         register_proxy_tools(mcp, lambda: store, get_client)
 
         tools = {t.name: t.fn for t in mcp._tool_manager.list_tools()}
-        result = await tools["ue_call"]("img_tool", "{}")
+        result = await tools["ue_call"]("img_tool", {})
         assert "Image" in result
         assert "image/png" in result

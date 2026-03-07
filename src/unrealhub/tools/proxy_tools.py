@@ -1,4 +1,3 @@
-import json
 import logging
 import time
 from typing import Any
@@ -133,11 +132,11 @@ def register_proxy_tools(mcp: FastMCP, get_state, get_client) -> None:
         return "\n".join(lines)
 
     @mcp.tool()
-    async def ue_call(tool_name: str, arguments: str = "{}") -> str:
+    async def ue_call(tool_name: str, arguments: dict | None = None) -> str:
         """Call any tool on the active UE instance.
 
         tool_name: Name of the UE tool to call (e.g. 'search_console_commands').
-        arguments: JSON string of tool arguments (e.g. '{"keyword": "stat"}').
+        arguments: Tool arguments as a dict (e.g. {"keyword": "stat"}).
 
         Use ue_list_tools() first to see available tools and their parameter schemas.
         """
@@ -145,19 +144,11 @@ def register_proxy_tools(mcp: FastMCP, get_state, get_client) -> None:
         if not client:
             return _offline_message()
 
-        try:
-            args = json.loads(arguments) if arguments else {}
-        except json.JSONDecodeError as e:
-            return (
-                f"Invalid JSON arguments: {e}\n"
-                "Provide arguments as a JSON string, e.g. '{\"key\": \"value\"}'"
-            )
-
         state = get_state()
         active = state.get_active_instance()
 
         start = time.time()
-        result = await client.call_tool(tool_name, args)
+        result = await client.call_tool(tool_name, arguments or {})
         duration = (time.time() - start) * 1000
 
         if active:
@@ -204,22 +195,17 @@ def register_proxy_tools(mcp: FastMCP, get_state, get_client) -> None:
 
     @mcp.tool()
     async def ue_call_dispatch(
-        domain: str, tool_name: str, arguments: str = "{}"
+        domain: str, tool_name: str, arguments: dict | None = None
     ) -> str:
         """Call a domain tool on the active UE instance.
 
         domain: Domain name (e.g. 'level', 'blueprint', 'slate').
         tool_name: Tool name within the domain.
-        arguments: JSON string of tool arguments.
+        arguments: Tool arguments as a dict.
         """
         client = get_client(None)
         if not client:
             return _offline_message()
-
-        try:
-            args = json.loads(arguments) if arguments else {}
-        except json.JSONDecodeError as e:
-            return f"Invalid JSON arguments: {e}"
 
         state = get_state()
         active = state.get_active_instance()
@@ -230,7 +216,7 @@ def register_proxy_tools(mcp: FastMCP, get_state, get_client) -> None:
             {
                 "domain": domain,
                 "tool_name": tool_name,
-                "arguments": args,
+                "arguments": arguments or {},
             },
         )
         duration = (time.time() - start) * 1000
