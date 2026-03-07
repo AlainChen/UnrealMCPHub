@@ -8,7 +8,7 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep, CallMcpTool
 # UseUnrealHub — Agent 驱动 UE 开发综合技能
 
 > **维护规约**：本文件随 UnrealMCPHub 仓库发布。对 Hub 的任何功能变更（新工具、参数修改、行为变化）
-> 都**必须**同步更新本文件。详见工作区 `AGENTS.md` 中的同步规约。
+> 都**必须**同步更新本文件。同步检查清单见 `skills/unrealhub-developer/SKILL.md`。
 
 ---
 

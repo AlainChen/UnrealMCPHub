@@ -2,7 +2,7 @@
 
 > AI 编码代理在 Unreal Engine 中端到端交付完整游戏原型的能力评测基准。
 >
-> **本文件随 use-unrealhub 技能发布。** 权威版本位于 `.trellis/spec/benchmark/ue-agent-benchmark-v1.md`。
+> **本文件随 use-unrealhub 技能发布，是 Benchmark 规范的权威副本。**
 
 ---
 

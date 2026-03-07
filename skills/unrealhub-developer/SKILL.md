@@ -11,7 +11,7 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep
 > 如需了解如何**使用** Hub 驱动 UE 开发，请参阅 `skills/use-unrealhub/SKILL.md`（随 Hub 仓库一起发布）。
 >
 > **维护规约**：对 Hub 的任何功能变更（新工具、参数修改、行为变化）
-> 都**必须**同步更新 `skills/use-unrealhub/SKILL.md`。详见 `AGENTS.md`。
+> 都**必须**同步更新 `skills/use-unrealhub/SKILL.md`。详见下方「添加新工具检查清单」。
 
 ## 架构概览
 
