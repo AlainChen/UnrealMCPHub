@@ -1,6 +1,6 @@
 ---
 name: use-unrealhub
-description: '通过 UnrealMCPHub 驱动 Unreal Engine 完成游戏开发全流程的综合技能。覆盖：工程管理、C++ 编译、关卡构建、PIE 测试、AI 寻路、内存治理、弹窗处理。触发：用户提及 UE/Unreal/编译/启动/崩溃/MCP/PIE/关卡/怪物/AI 等关键词时激活。'
+description: '通过 UnrealMCPHub 驱动 Unreal Engine 完成游戏开发全流程的综合技能。覆盖：工程管理、C++ 编译、关卡构建、PIE 测试、AI 寻路、内存治理、弹窗处理、Slate UI 操控、UMG Widget 创建。触发：用户提及 UE/Unreal/编译/启动/崩溃/MCP/PIE/关卡/怪物/AI/UI/Widget/Slate 等关键词时激活。'
 license: MIT
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, CallMcpTool
 ---
@@ -91,6 +91,19 @@ ue_call("spawn_actor", {...}, domain="level")          # 调用域工具
 - `rescan=True` 自动识别僵尸（端口无响应 + PID 已死 → offline）
 - 同一项目的死亡实例自动归并，只保留最近一个
 - ProcessWatcher 后台每 5 分钟自动清理超龄 crashed 实例
+
+**崩溃后实例切换**：编辑器崩溃后重启会产生新实例（如 `ue20`），但活跃实例可能仍指向旧的已崩溃实例。需要手动切换：
+
+```
+manage_instance(action="use", instance="ue20")
+```
+
+**别名管理**：可为实例设置别名，后续通过别名操作：
+
+```
+manage_instance(action="set_alias", instance="ue1", alias="MyProject")
+manage_instance(action="use", instance="MyProject")   // 通过别名切换
+```
 
 ---
 
@@ -183,9 +196,13 @@ launch_editor(exec_cmds="-nosplash -unattended -nopause")
 **方法 B：Slate 工具关闭**
 
 ```
-ue_call("slate_send_key_press", {"key": "Enter"})           // 确认对话框
-ue_call("slate_close_dock_tab", {"tab_label": "Plugins"})   // 关闭 Tab
+ue_call("slate_send_key_press", {"key": "Enter"}, domain="slate")        // 确认对话框
+ue_call("slate_close_dock_tab", {"tab_label": "Plugins"}, domain="slate") // 关闭 Tab
+ue_call("slate_safe_close", {"tab_label": "Plugins"}, domain="slate")    // 安全关闭（优先 Tab，必要时关窗口）
+ue_call("slate_get_all_dock_tabs", {}, domain="slate")                    // 先查看已打开的 Tab 列表
 ```
+
+> **注意**：所有 Slate 工具都在 `slate` domain 中，调用时必须指定 `domain="slate"`。
 
 **方法 C：弹窗阻塞 MCP 连接时**
 
@@ -322,3 +339,141 @@ def spawn_mesh(asset, x, y, z, sx, sy, sz, label=''):
 9. **质量导向**：代码架构清晰、数值可配置、核心循环闭合
 10. **编译后恢复**：修改 BuildConfiguration.xml 后必须恢复原值
 11. **Domain 动态发现**：不要假设固定的 domain 列表，每次会话用 `ue_list_domains()` 发现当前可用 domain
+12. **Widget Tree 优先**：查找 UI 元素时优先用 `slate_find_widgets_by_type` 或 `slate_get_all_text_blocks`，而非盲目点击坐标
+13. **UMG 路径约束**：UMG 工具的 C++ 后端硬编码资产路径为 `/Game/Widgets/`，Python `path` 参数当前被忽略
+14. **崩溃后切换实例**：编辑器崩溃重启后，活跃实例可能仍指向旧实例，需 `manage_instance(action="use")` 切换
+
+---
+
+## Part 8: Slate UI 操控
+
+Slate 工具在 `slate` domain 中，共 22 个，所有调用需指定 `domain="slate"`。
+
+### 8.1 工具速查
+
+| 分类 | 工具 | 关键参数 | 用途 |
+|------|------|----------|------|
+| **查询** | `slate_get_all_windows` | — | 列出所有顶层窗口（索引、标题、位置、大小） |
+| | `slate_get_widget_tree` | window_index, max_depth(1-12) | 获取窗口 Widget 树（嵌套 JSON） |
+| | `slate_get_widget_under_cursor` | — | 鼠标下的 Widget 路径和几何信息 |
+| | `slate_get_widget_at_position` | x, y | 指定坐标处的 Widget 路径 |
+| | `slate_find_widgets_by_type` | type_name, max_depth | 按类型名搜索（SButton, STextBlock 等） |
+| | `slate_get_all_text_blocks` | window_index | 快速获取所有非空文本 |
+| | `slate_get_editor_ui_summary` | — | UI 全貌摘要（窗口列表 + 激活窗口） |
+| | `slate_get_active_window` | — | 当前激活窗口信息 |
+| | `slate_get_focused_widget` | — | 键盘焦点 Widget |
+| | `slate_get_all_dock_tabs` | — | 所有打开的 DockTab 列表 |
+| **窗口** | `slate_move_window` | x, y, window_index | 移动窗口 |
+| | `slate_resize_window` | width, height | 调整窗口大小 |
+| | `slate_close_window` | window_index/title | 关闭窗口 |
+| | `slate_close_dock_tab` | tab_label/tab_id | 关闭 DockTab |
+| | `slate_safe_close` | tab_label, window_title | 安全关闭（优先 Tab） |
+| **焦点** | `slate_set_keyboard_focus` | x, y | 将焦点设到指定坐标 Widget |
+| **Tab** | `slate_invoke_tab` | tab_id | 打开/切换编辑器面板 |
+| **交互** | `slate_click_at_position` | x, y, button | 模拟鼠标点击 |
+| | `slate_send_text_input` | text | 向焦点控件输入文本 |
+| | `slate_send_key_press` | key, shift, ctrl, alt | 发送键盘按键 |
+| | `slate_scroll_at_position` | x, y, delta | 模拟滚轮滚动 |
+| **通知** | `slate_show_notification` | message, type, duration | 编辑器右下角通知 |
+
+### 8.2 Widget Tree 查询流程
+
+```
+1. ue_call("slate_get_all_windows", {}, domain="slate")
+   → 获取窗口列表，记录目标 window_index
+
+2. ue_call("slate_get_widget_tree", {"window_index": 0, "max_depth": 5}, domain="slate")
+   → 获取嵌套 Widget 树，每节点含 type/tag/visibility/children
+
+3. ue_call("slate_find_widgets_by_type", {"type_name": "SButton"}, domain="slate")
+   → 按类型搜索，返回匹配 Widget 列表（含 depth/in_window）
+
+4. ue_call("slate_get_all_text_blocks", {}, domain="slate")
+   → 快速收集所有 STextBlock 文本（非空）
+```
+
+### 8.3 坐标定位与交互
+
+通过 Widget Tree 的 geometry 信息获取坐标，再用交互工具操作：
+
+```
+# 查找目标 Widget 位置
+ue_call("slate_get_widget_at_position", {"x": 500, "y": 300}, domain="slate")
+
+# 点击
+ue_call("slate_click_at_position", {"x": 500, "y": 300}, domain="slate")
+
+# 聚焦 + 输入文本
+ue_call("slate_set_keyboard_focus", {"x": 500, "y": 300}, domain="slate")
+ue_call("slate_send_text_input", {"text": "Hello"}, domain="slate")
+
+# 发送按键
+ue_call("slate_send_key_press", {"key": "Enter"}, domain="slate")
+```
+
+### 8.4 常用 Tab ID
+
+| Tab ID | 面板 |
+|--------|------|
+| `OutputLog` | 输出日志 |
+| `ContentBrowser1` | 内容浏览器 |
+| `LevelEditor` | 关卡编辑器视口 |
+| `WorldOutliner` | 世界大纲 |
+| `DetailsView` | 详情面板 |
+| `MessageLog` | 消息日志 |
+| `Sequencer` | 序列器 |
+
+```
+ue_call("slate_invoke_tab", {"tab_id": "OutputLog"}, domain="slate")
+```
+
+---
+
+## Part 9: UMG Widget 创建
+
+UMG 工具在 `umg` domain 中，用于程序化创建 Widget Blueprint 并添加 UI 控件。
+
+### 9.1 工具速查
+
+| 工具 | 关键参数 | 用途 |
+|------|----------|------|
+| `create_umg_widget_blueprint` | widget_name | 创建 Widget Blueprint |
+| `add_text_block_to_widget` | widget_name(蓝图名), text_block_name, text, position | 添加文本块 |
+| `add_button_to_widget` | widget_name(蓝图名), button_name, text, position | 添加按钮 |
+| `bind_widget_event` | widget_name(蓝图名), widget_component_name, event_name | 绑定事件 |
+| `add_widget_to_viewport` | widget_name(蓝图名), z_order | 添加到视口 |
+| `set_text_block_binding` | widget_name(蓝图名), text_block_name, binding_property | 设置属性绑定 |
+
+### 9.2 创建流程
+
+```
+1. ue_call("create_umg_widget_blueprint", {"widget_name": "MyHUD"}, domain="umg")
+2. ue_call("add_text_block_to_widget", {"widget_name": "MyHUD", "text_block_name": "Title", "text": "Score: 0", "position": [100, 50]}, domain="umg")
+3. ue_call("add_button_to_widget", {"widget_name": "MyHUD", "button_name": "StartBtn", "text": "Start", "position": [100, 150]}, domain="umg")
+4. ue_call("bind_widget_event", {"widget_name": "MyHUD", "widget_component_name": "StartBtn", "event_name": "OnClicked"}, domain="umg")
+5. ue_call("add_widget_to_viewport", {"widget_name": "MyHUD"}, domain="umg")
+```
+
+### 9.3 已知问题
+
+**C++ 后端 Bug（截至 2026-03-07）**：
+
+- `create_umg_widget_blueprint` C++ 层使用 `UBlueprint::StaticClass()` 而非 `UWidgetBlueprint::StaticClass()`，导致 Cast 失败，Widget Blueprint 无法正确创建
+- 创建的蓝图缺少 CanvasPanel 根节点，后续添加控件会报 "Root Canvas Panel not found"
+- **临时绕过方案**：用 `ue_run_python` 通过 `WidgetBlueprintFactory` 创建
+
+```python
+import unreal
+factory = unreal.WidgetBlueprintFactory()
+factory.set_editor_property('parent_class', unreal.UserWidget)
+asset_tools = unreal.AssetToolsHelpers.get_asset_tools()
+wb = asset_tools.create_asset('MyHUD', '/Game/Widgets', None, factory)
+```
+
+> **注意**：即使通过 Python 创建，WidgetBlueprintFactory 可能不自动添加 CanvasPanel 根节点，
+> 导致后续 `add_text_block_to_widget` 仍会失败。此问题需要在 RemoteMCP C++ 层修复。
+
+### 9.4 路径约束
+
+C++ 后端硬编码资产保存路径为 `/Game/Widgets/`，Python 层的 `path` 参数当前被忽略。
+所有 UMG 资产统一创建在 `/Game/Widgets/<widget_name>` 下。
