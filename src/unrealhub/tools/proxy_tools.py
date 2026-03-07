@@ -160,6 +160,65 @@ def register_proxy_tools(mcp: FastMCP, get_state, get_client) -> None:
         return "\n".join(lines)
 
     @mcp.tool()
+    async def ue_list_domains() -> str:
+        """List all available tool domains from the active UE instance.
+
+        Returns domain names with descriptions. Use ue_list_tools(domain="<name>")
+        to see tools within a specific domain, then ue_call() to invoke them.
+        """
+        client = get_client(None)
+        if not client:
+            return _offline_message()
+
+        state = get_state()
+        active = state.get_active_instance()
+        pid = active.pid if active else None
+
+        try:
+            result = await _with_crash_guard(
+                client.call_tool("get_dispatch", {"domain": ""}), pid
+            )
+        except _UECrashed:
+            _handle_crash(state, active, client)
+            return _crash_message(active)
+
+        crash_msg = _check_crash_fallback(
+            not result.get("success"), state, active, client
+        )
+        if crash_msg:
+            return crash_msg
+
+        if not result.get("success"):
+            return _format_tool_result(result)
+
+        raw_text = _format_tool_result(result)
+        try:
+            data = json.loads(raw_text)
+        except (json.JSONDecodeError, TypeError):
+            return raw_text
+
+        domains_info = data.get("domains_info", [])
+        domain_names = data.get("domains", [])
+
+        if not domains_info and not domain_names:
+            return "No domains registered on the active UE instance."
+
+        inst_id = active.auto_id if active else "unknown"
+        lines = [f"UE Instance '{inst_id}' has {len(domains_info or domain_names)} domain(s):\n"]
+        if domains_info:
+            for info in domains_info:
+                name = info.get("domain", "?")
+                desc = info.get("description", "")
+                lines.append(f"  {name}: {desc}" if desc else f"  {name}")
+        else:
+            for name in domain_names:
+                lines.append(f"  {name}")
+
+        lines.append("")
+        lines.append("Use ue_list_tools(domain=\"<name>\") to see tools in a domain.")
+        return "\n".join(lines)
+
+    @mcp.tool()
     async def ue_list_tools(domain: str = "") -> str:
         """List available tools from the active UE instance.
 
