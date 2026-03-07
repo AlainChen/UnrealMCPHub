@@ -331,6 +331,52 @@ class StateStore:
 
         return removed
 
+    def dedup_by_project(self) -> list[str]:
+        """Ensure at most one instance per project_path.
+
+        For each project with duplicates, keep the best candidate
+        (online > offline/crashed, newer last_seen wins ties) and remove the rest.
+        Instances without a project_path are left untouched.
+
+        Returns the list of removed auto_ids.
+        """
+        from collections import defaultdict
+
+        groups: dict[str, list[str]] = defaultdict(list)
+        with self._lock:
+            for auto_id, inst in self._instances.items():
+                norm = _normalize_path(inst.project_path)
+                if not norm:
+                    continue
+                groups[norm].append(auto_id)
+
+            removed: list[str] = []
+            for _norm_path, ids in groups.items():
+                if len(ids) <= 1:
+                    continue
+
+                def sort_key(aid: str) -> tuple:
+                    inst = self._instances[aid]
+                    alive = 1 if inst.status in ("online", "starting") else 0
+                    return (alive, inst.last_seen or "")
+
+                ids.sort(key=sort_key, reverse=True)
+                keep = ids[0]
+
+                for aid in ids[1:]:
+                    del self._instances[aid]
+                    if self._active_instance_id == aid:
+                        self._active_instance_id = keep
+                    removed.append(aid)
+
+        if removed:
+            self.save()
+            for rid in removed:
+                self._fire_unregister(rid)
+            logger.info("Dedup removed instances: %s", removed)
+
+        return removed
+
     # ------------------------------------------------------------------
 
     def update_status(
