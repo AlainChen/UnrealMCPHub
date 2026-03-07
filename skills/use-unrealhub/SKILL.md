@@ -343,7 +343,8 @@ Phase 7: 迭代增强   → Boss、被动技能、特效（无上限）
 | Tier 3 | 120-180 | 打击感、Boss、特效、数值平衡 |
 | Tier 4 | 180+ | 创意玩法、元进度、性能优化 |
 
-> 完整 Benchmark 规范见 `.trellis/spec/benchmark/ue-agent-benchmark-v1.md`
+> **完整 Benchmark 规范**见同目录下 [`benchmark-v1.md`](./benchmark-v1.md)。
+> 启动 Benchmark 时，读取该文件获取标准 Prompt、执行流程、评分体系、游戏内容规格。
 
 ---
 
