@@ -37,8 +37,12 @@ UnrealMCPHub/
 ├── skills/
 │   ├── unrealhub-developer/
 │   │   └── SKILL.md           # 本文件（开发者指南）
-│   └── use-unrealhub/
-│       └── SKILL.md           # 使用者技能（随 Hub 发布）
+│   ├── use-unrealhub/
+│   │   └── SKILL.md           # 使用者技能（随 Hub 发布）
+│   └── ue-benchmark/
+│       ├── SKILL.md           # Benchmark 通用框架
+│       └── scenarios/         # 各评测场景规格
+│           └── vampire-survivors-v1.md
 ```
 
 ## 工具注册模式

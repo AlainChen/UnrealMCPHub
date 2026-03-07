@@ -1,6 +1,6 @@
 ---
 name: use-unrealhub
-description: '通过 UnrealMCPHub 驱动 Unreal Engine 完成游戏开发全流程的综合技能。覆盖：工程管理、C++ 编译、关卡构建、PIE 测试、AI 寻路、内存治理、弹窗处理、Benchmark 评测。触发：用户提及 UE/Unreal/编译/启动/崩溃/MCP/PIE/关卡/怪物/AI/Benchmark 等关键词时激活。'
+description: '通过 UnrealMCPHub 驱动 Unreal Engine 完成游戏开发全流程的综合技能。覆盖：工程管理、C++ 编译、关卡构建、PIE 测试、AI 寻路、内存治理、弹窗处理。触发：用户提及 UE/Unreal/编译/启动/崩溃/MCP/PIE/关卡/怪物/AI 等关键词时激活。'
 license: MIT
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, CallMcpTool
 ---
@@ -290,65 +290,7 @@ def spawn_mesh(asset, x, y, z, sx, sy, sz, label=''):
 
 ---
 
-## Part 7: Benchmark 知识
-
-### 7.1 评测标准（内化参考）
-
-Agent 在完成游戏开发任务时，应以此标准为质量目标：
-
-**总分公式**：`UserScore × 0.60 + AIReviewScore × 0.30 + TokenScore × 0.10`
-
-**用户体验基准（60% 权重）**：
-
-| 模块 | 权重 | 关键指标 |
-|------|------|----------|
-| 角色控制 | 15分 | 移动流畅、转向自然 |
-| 相机 | 10分 | 跟随稳定、无穿模 |
-| 自动攻击 | 15分 | 至少1种武器、命中反馈 |
-| 敌人 AI | 15分 | 能追踪、多类型、行为差异化 |
-| 游戏循环 | 20分 | 升级系统、波次递进、死亡重开 |
-| 关卡设计 | 15分 | 有地形、动线合理、拾取物分布 |
-| 音效 | 10分 | 攻击音、UI 音、背景音 |
-
-**代码质量基准（30% 权重）**：
-- 架构设计：职责分离、模块化
-- UE 规范：UPROPERTY 标记、命名规范
-- 内存安全：弱引用、生命周期管理
-- 数据驱动：数值可配置、不硬编码
-
-**Token 效率（10% 权重）**：
-- 参考基准 1,000,000,000 (1B) Token
-- Agent 须自行记录 Token 消耗（`add_note` 阶段性记录），用户同时独立记录
-- 质量越高对 Token 消耗越宽容
-
-### 7.2 完整游戏原型执行阶段
-
-```
-Phase 0: 工程初始化 → 创建工程、配置 Build.cs
-Phase 1: 核心 3C    → 角色、相机、输入
-Phase 2: 战斗系统   → 武器(≥3种)、敌人(≥3种+AI状态机)、伤害数值
-Phase 3: 游戏循环   → 经验/升级/波次/死亡重开/HUD
-Phase 4: 关卡环境   → 地形/障碍/动线/拾取物/光照
-Phase 5: 音效      → 攻击/受击/升级/背景音
-Phase 6: PIE 测试   → 编译 → 构建关卡 → 验证 → 修复
-Phase 7: 迭代增强   → Boss、被动技能、特效（无上限）
-```
-
-### 7.3 质量层级
-
-| Tier | 分数段 | 特征 |
-|------|--------|------|
-| Tier 1 | 50-80 | 能跑能打、基本可玩 |
-| Tier 2 | 80-120 | 多武器、升级系统、HUD、音效 |
-| Tier 3 | 120-180 | 打击感、Boss、特效、数值平衡 |
-| Tier 4 | 180+ | 创意玩法、元进度、性能优化 |
-
-> **完整 Benchmark 规范**见同目录下 [`benchmark-v1.md`](./benchmark-v1.md)。
-> 启动 Benchmark 时，读取该文件获取标准 Prompt、执行流程、评分体系、游戏内容规格。
-
----
-
-## Part 8: 行为准则
+## Part 7: 行为准则
 
 1. **配置优先**：任何 UE 操作前确认 `get_project_config()` 有配置
 2. **代理优先**：`ue_run_python` > `ue_call` > `ue_list_tools` 按频率排序
@@ -358,6 +300,6 @@ Phase 7: 迭代增强   → Boss、被动技能、特效（无上限）
 6. **PIE 查询**：用 `run_console_command` + `getall`，不用 Python world context
 7. **NavMesh 前置**：有 AI 寻路需求时先配 NavMesh
 8. **保持笔记**：`add_note` 记录关键决策，崩溃后 `get_session` 恢复
-9. **质量导向**：以 Benchmark Tier 2+ 为基准交付
+9. **质量导向**：代码架构清晰、数值可配置、核心循环闭合
 10. **编译后恢复**：修改 BuildConfiguration.xml 后必须恢复原值
 11. **Domain 动态发现**：不要假设固定的 domain 列表，每次会话用 `ue_list_domains()` 发现当前可用 domain
