@@ -1,3 +1,4 @@
+import json
 import logging
 import time
 from typing import Any
@@ -216,7 +217,7 @@ def register_proxy_tools(mcp: FastMCP, get_state, get_client) -> None:
             {
                 "domain": domain,
                 "tool_name": tool_name,
-                "arguments": arguments or {},
+                "arguments": json.dumps(arguments) if arguments else "{}",
             },
         )
         duration = (time.time() - start) * 1000
