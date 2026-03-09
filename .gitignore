@@ -6,3 +6,9 @@ dist/
 build/
 .tmp_*.py
 uv.lock
+.pytest_cache/
+BenchmarkVampire/
+
+# PyInstaller
+*.spec
+*.manifest

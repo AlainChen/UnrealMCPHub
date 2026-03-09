@@ -1,0 +1,128 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  test:
+    uses: ./.github/workflows/ci.yml
+
+  publish-pypi:
+    needs: test
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/unrealhub
+    permissions:
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Build package
+        run: uv build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  build-executables:
+    needs: test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            artifact: unrealhub-windows-amd64
+            ext: .exe
+          - os: ubuntu-latest
+            artifact: unrealhub-linux-amd64
+            ext: ""
+          - os: macos-latest
+            artifact: unrealhub-macos-arm64
+            ext: ""
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
+
+      - name: Set up Python
+        run: uv python install 3.12
+
+      - name: Install dependencies + PyInstaller
+        run: |
+          uv sync
+          uv pip install pyinstaller
+
+      - name: Build executable
+        run: |
+          uv run pyinstaller \
+            --onefile \
+            --name unrealhub \
+            --collect-all unrealhub \
+            --hidden-import uvicorn.logging \
+            --hidden-import uvicorn.loops \
+            --hidden-import uvicorn.loops.auto \
+            --hidden-import uvicorn.protocols \
+            --hidden-import uvicorn.protocols.http \
+            --hidden-import uvicorn.protocols.http.auto \
+            --hidden-import uvicorn.protocols.websockets \
+            --hidden-import uvicorn.protocols.websockets.auto \
+            --hidden-import uvicorn.lifespan \
+            --hidden-import uvicorn.lifespan.on \
+            --hidden-import uvicorn.lifespan.off \
+            src/unrealhub/cli.py
+        shell: bash
+
+      - name: Verify executable
+        run: ./dist/unrealhub${{ matrix.ext }} --help
+        shell: bash
+
+      - name: Rename artifact
+        run: |
+          mv dist/unrealhub${{ matrix.ext }} dist/${{ matrix.artifact }}${{ matrix.ext }}
+        shell: bash
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: dist/${{ matrix.artifact }}${{ matrix.ext }}
+
+  create-release:
+    needs: [publish-pypi, build-executables]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+
+      - name: List artifacts
+        run: find artifacts/ -type f | head -20
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            artifacts/unrealhub-windows-amd64/unrealhub-windows-amd64.exe
+            artifacts/unrealhub-linux-amd64/unrealhub-linux-amd64
+            artifacts/unrealhub-macos-arm64/unrealhub-macos-arm64

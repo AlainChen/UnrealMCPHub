@@ -26,35 +26,17 @@ AI Agent ──► UnrealMCPHub ──► UE Editor + RemoteMCP plugin
 
 ## Quick Install
 
-### Option A: Zero-install (just add config)
-
-No download, no clone, no install. Paste this single block into `.cursor/mcp.json` and restart Cursor:
-
-```json
-{
-  "mcpServers": {
-    "unrealhub": {
-      "command": "uvx",
-      "args": [
-        "--from", "git+https://github.com/blackplume233/UnrealMCPHub.git",
-        "unrealhub", "serve"
-      ]
-    }
-  }
-}
-```
-
-> Requires [uv](https://docs.astral.sh/uv/getting-started/installation/) (`pip install uv` or `winget install astral-sh.uv`). Cursor will auto-fetch the Hub on first launch.
-
-### Option B: Install once, then configure
+### Option A: One-line install from PyPI (recommended)
 
 ```bash
 # uv (recommended)
-uv tool install git+https://github.com/blackplume233/UnrealMCPHub.git
+uv tool install unrealhub
 
 # or pip
-pip install git+https://github.com/blackplume233/UnrealMCPHub.git
+pip install unrealhub
 ```
+
+Then add to `.cursor/mcp.json`:
 
 ```json
 {
@@ -67,7 +49,45 @@ pip install git+https://github.com/blackplume233/UnrealMCPHub.git
 }
 ```
 
-### Option C: Clone for development
+### Option B: Zero-install (auto-fetch on first launch)
+
+No download, no clone, no install. Paste this single block into `.cursor/mcp.json` and restart Cursor:
+
+```json
+{
+  "mcpServers": {
+    "unrealhub": {
+      "command": "uvx",
+      "args": ["unrealhub", "serve"]
+    }
+  }
+}
+```
+
+> Requires [uv](https://docs.astral.sh/uv/getting-started/installation/) (`pip install uv` or `winget install astral-sh.uv`). Cursor will auto-fetch the Hub on first launch.
+
+### Option C: Standalone executable (no Python needed)
+
+Download the latest executable for your platform from [GitHub Releases](https://github.com/blackplume233/UnrealMCPHub/releases), then:
+
+```json
+{
+  "mcpServers": {
+    "unrealhub": {
+      "command": "/path/to/unrealhub",
+      "args": ["serve"]
+    }
+  }
+}
+```
+
+| Platform | File |
+|----------|------|
+| Windows x64 | `unrealhub-windows-amd64.exe` |
+| macOS ARM | `unrealhub-macos-arm64` |
+| Linux x64 | `unrealhub-linux-amd64` |
+
+### Option D: Clone for development
 
 ```bash
 git clone https://github.com/blackplume233/UnrealMCPHub.git

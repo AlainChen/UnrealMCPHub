@@ -5,6 +5,21 @@ description = "UnrealMCPHub - Central management platform for Unreal Engine MCP 
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
+authors = [
+    { name = "BlackPlume" },
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Games/Entertainment",
+]
+keywords = ["unreal-engine", "mcp", "ai-agent", "game-development", "model-context-protocol"]
 dependencies = [
     "mcp>=1.25.0",
     "httpx>=0.27",
@@ -16,6 +31,12 @@ dependencies = [
 
 [project.scripts]
 unrealhub = "unrealhub.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/blackplume233/UnrealMCPHub"
+Repository = "https://github.com/blackplume233/UnrealMCPHub"
+Issues = "https://github.com/blackplume233/UnrealMCPHub/issues"
+Documentation = "https://github.com/blackplume233/UnrealMCPHub#readme"
 
 [project.optional-dependencies]
 dev = [
