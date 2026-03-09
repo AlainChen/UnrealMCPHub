@@ -15,31 +15,22 @@ from unrealhub.utils.ue_paths import UEPathResolver
 
 logger = logging.getLogger(__name__)
 
+_GRACEFUL_QUIT_SCRIPT = """\
+import unreal
+try:
+    unreal.EditorLoadingAndSavingUtils.save_dirty_packages(True, True)
+except Exception:
+    pass
+unreal.SystemLibrary.quit_editor()
+"""
+
+_GRACEFUL_QUIT_TIMEOUT = 15
+_FORCE_KILL_TIMEOUT = 5
+
 
 def register_launch_tools(
     mcp: FastMCP, get_config, get_state, get_ue_client_factory
 ) -> None:
-    async def _kill_editor(state, active) -> str:
-        """Kill the active editor process and update state."""
-        if not active:
-            return "No active instance."
-        if not active.pid or not is_process_alive(active.pid):
-            state.update_status(active.auto_id, "offline")
-            state.save()
-            return f"Instance '{active.auto_id}' process not running (already dead)."
-
-        try:
-            proc = psutil.Process(active.pid)
-            proc.terminate()
-            gone, alive = psutil.wait_procs([proc], timeout=5)
-            if alive:
-                alive[0].kill()
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-            pass
-
-        state.update_status(active.auto_id, "offline")
-        state.save()
-        return f"Editor stopped (PID: {active.pid}, instance: {active.auto_id})."
 
     def _make_clean_env() -> dict[str, str]:
         """Build an env dict that strips Hub's Python artifacts.
@@ -191,29 +182,109 @@ def register_launch_tools(
                     result.append(proc)
             return result
 
+        async def _fire_graceful_quit(inst) -> None:
+            """Send save-all + quit via a proper MCP session.
+
+            The call will almost certainly fail (connection reset) because
+            the editor tears down its MCP server during shutdown.  That's
+            expected — we only need the request to *reach* the game thread.
+            """
+            client = UEMCPClient(inst.url, timeout_connect=5.0, timeout_read=10.0)
+            try:
+                await client.call_tool(
+                    "run_python_script", {"script": _GRACEFUL_QUIT_SCRIPT},
+                )
+            except Exception:
+                pass
+
+        async def _wait_for_pids_exit(pids: set[int], timeout: float) -> set[int]:
+            """Poll until all *pids* are gone or *timeout* elapses.
+            Returns the set of PIDs that are still alive."""
+            deadline = time.monotonic() + timeout
+            remaining = set(pids)
+            while remaining and time.monotonic() < deadline:
+                remaining = {p for p in remaining if is_process_alive(p)}
+                if remaining:
+                    await asyncio.sleep(1.0)
+            return remaining
+
+        def _force_kill_pid(pid: int) -> str:
+            try:
+                p = psutil.Process(pid)
+                p.terminate()
+                gone, alive = psutil.wait_procs([p], timeout=_FORCE_KILL_TIMEOUT)
+                if alive:
+                    alive[0].kill()
+                return f"Force-killed PID {pid}"
+            except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
+                return f"PID {pid} already gone"
+
         async def _kill_all_project_editors() -> str:
-            """Kill every UE process for this project + mark state offline."""
-            msgs = []
-            # Kill via OS process scan (catches editors not tracked in state)
+            """Gracefully shut down all editors for this project via MCP,
+            falling back to OS-level kill for any that don't exit in time."""
+            msgs: list[str] = []
+
+            # Phase 1: fire quit command to all online tracked instances,
+            # and collect PIDs to watch (regardless of MCP call result).
+            project_instances = [
+                inst for inst in state.list_instances()
+                if inst.status in ("online", "starting")
+                and (inst.project_path or "").replace("\\", "/").lower() == project_norm
+            ]
+            watch_pids: set[int] = set()
+            bg_tasks: list[asyncio.Task] = []
+            if project_instances:
+                for inst in project_instances:
+                    bg_tasks.append(
+                        asyncio.create_task(_fire_graceful_quit(inst))
+                    )
+                    if inst.pid and is_process_alive(inst.pid):
+                        watch_pids.add(inst.pid)
+                    msgs.append(
+                        f"Quit signal sent to '{inst.auto_id}' (PID {inst.pid})"
+                    )
+
+            # Also include any untracked OS-level UE processes for this project
             for proc_info in _find_project_procs():
-                pid = proc_info["pid"]
-                try:
-                    p = psutil.Process(pid)
-                    p.terminate()
-                    gone, alive = psutil.wait_procs([p], timeout=5)
-                    if alive:
-                        alive[0].kill()
-                    msgs.append(f"Killed PID {pid}")
-                except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-                    msgs.append(f"PID {pid} already gone")
-            # Mark all tracked instances for this project as offline
+                watch_pids.add(proc_info["pid"])
+
+            if not watch_pids:
+                for t in bg_tasks:
+                    t.cancel()
+                return "No running editors found."
+
+            # Phase 2: poll PIDs while quit commands run in background.
+            # The MCP calls may hang until the editor shuts down (or timeout),
+            # so we don't await them — PID disappearance is the real signal.
+            still_alive = await _wait_for_pids_exit(
+                watch_pids, _GRACEFUL_QUIT_TIMEOUT,
+            )
+            for pid in watch_pids - still_alive:
+                msgs.append(f"PID {pid} exited gracefully")
+
+            # Phase 3: force-kill anything that didn't exit in time
+            if still_alive:
+                msgs.append(
+                    f"PIDs {still_alive} did not exit in "
+                    f"{_GRACEFUL_QUIT_TIMEOUT}s, force-killing"
+                )
+                for pid in still_alive:
+                    msgs.append(_force_kill_pid(pid))
+
+            # Clean up background MCP tasks (they may still be waiting)
+            for t in bg_tasks:
+                t.cancel()
+
+            # Phase 4: mark all tracked instances for this project as offline
             for inst in state.list_instances():
                 if inst.status in ("online", "starting"):
-                    inst_proj = (getattr(inst, "project_path", "") or "").replace("\\", "/").lower()
+                    inst_proj = (
+                        getattr(inst, "project_path", "") or ""
+                    ).replace("\\", "/").lower()
                     if inst_proj == project_norm:
                         state.update_status(inst.auto_id, "offline")
             state.save()
-            return "; ".join(msgs) if msgs else "No running editors found."
+            return "; ".join(msgs)
 
         if action == "stop":
             result = await _kill_all_project_editors()

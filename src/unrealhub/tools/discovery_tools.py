@@ -83,12 +83,28 @@ def register_discovery_tools(mcp: FastMCP, get_config, get_state) -> None:
             running_procs = find_unreal_editor_processes()
             report_lines: list[str] = []
 
+            def _match_proc_for_port(port: int) -> tuple[str, int | None]:
+                """Find the UE process whose project uses this port."""
+                config = get_config()
+                for proc in running_procs:
+                    pp = proc.get("project_path") or ""
+                    if not pp:
+                        continue
+                    for _name, entry in config.list_projects().items():
+                        entry_path = (entry.uproject_path or "").replace("\\", "/").lower()
+                        proc_path = pp.replace("\\", "/").lower()
+                        if entry_path == proc_path and entry.mcp_port == port:
+                            return pp, proc.get("pid")
+                    return pp, proc.get("pid")
+                return "", None
+
             for r in results:
                 existing = [
                     inst for inst in state.list_instances() if inst.port == r["port"]
                 ]
                 if existing:
-                    state.update_status(existing[0].auto_id, "online")
+                    project_path, pid = _match_proc_for_port(r["port"])
+                    state.update_status(existing[0].auto_id, "online", pid=pid)
                     state.save()
                     report_lines.append(
                         f"  {existing[0].auto_id} (port {r['port']}): "
@@ -96,18 +112,16 @@ def register_discovery_tools(mcp: FastMCP, get_config, get_state) -> None:
                     )
                     continue
 
-                project_path = ""
-                pid = None
-                for proc in running_procs:
-                    if proc.get("project_path"):
-                        project_path = proc["project_path"]
-                        pid = proc.get("pid")
-                        break
+                project_path, pid = _match_proc_for_port(r["port"])
 
+                config = get_config()
+                proj = config.get_active_project()
+                engine_root = proj.engine_root if proj else ""
                 instance = state.register_instance(
                     url=r["url"],
                     port=r["port"],
                     project_path=project_path,
+                    engine_root=engine_root,
                     pid=pid,
                 )
                 state.update_status(instance.auto_id, "online", pid=pid)
