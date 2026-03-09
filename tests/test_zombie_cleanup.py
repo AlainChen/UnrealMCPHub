@@ -27,6 +27,8 @@ class TestDedupDeadByProject:
                                 project_path="G:/Proj/A.uproject")
         store.update_status("ue1", "crashed")
         store.update_status("ue2", "offline")
+        store._instances["ue1"].last_seen = "2026-01-01T00:00:00"
+        store._instances["ue2"].last_seen = "2026-01-01T00:01:00"
         removed = store.dedup_dead_by_project()
         assert len(removed) == 1
         assert "ue1" in removed
@@ -43,6 +45,9 @@ class TestDedupDeadByProject:
         store.update_status("ue1", "crashed")
         store.update_status("ue2", "crashed")
         store.update_status("ue3", "offline")
+        store._instances["ue1"].last_seen = "2026-01-01T00:00:00"
+        store._instances["ue2"].last_seen = "2026-01-01T00:01:00"
+        store._instances["ue3"].last_seen = "2026-01-01T00:02:00"
         removed = store.dedup_dead_by_project()
         assert len(removed) == 2
         remaining = store.list_instances()
