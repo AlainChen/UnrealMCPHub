@@ -50,25 +50,28 @@ def register_launch_tools(
         return env
 
     def _subprocess_kwargs() -> dict:
-        """Platform-specific kwargs for create_subprocess_exec.
+        """Build kwargs for subprocess.Popen that launch UE as a fully
+        independent process — not a child of the Hub.
 
-        On Windows, detach UE from the Hub's process tree so it does not
-        inherit Job Objects, console handles, or scheduling constraints
-        that Cursor / the MCP host may impose.
+        Uses subprocess.Popen (not asyncio) so no Transport holds a
+        handle to the editor process.  On Windows the creation flags
+        detach from console, process group, and Job Object.  On POSIX
+        start_new_session calls setsid().
         """
         kwargs: dict = dict(
-            stdin=asyncio.subprocess.DEVNULL,
-            stdout=asyncio.subprocess.DEVNULL,
-            stderr=asyncio.subprocess.DEVNULL,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
             env=_make_clean_env(),
         )
         if sys.platform == "win32":
-            flags = (
+            kwargs["creationflags"] = (
                 subprocess.DETACHED_PROCESS
                 | subprocess.CREATE_NEW_PROCESS_GROUP
                 | subprocess.CREATE_BREAKAWAY_FROM_JOB
             )
-            kwargs["creationflags"] = flags
+        else:
+            kwargs["start_new_session"] = True
         return kwargs
 
     async def _start_editor(config, state, paths, project, headless, extra_args,
@@ -89,10 +92,8 @@ def register_launch_tools(
             cmd.extend(extra_args.split())
 
         try:
-            process = await asyncio.create_subprocess_exec(
-                *cmd, **_subprocess_kwargs(),
-            )
-            editor_pid = process.pid or 0
+            proc = subprocess.Popen(cmd, **_subprocess_kwargs())
+            editor_pid = proc.pid
         except FileNotFoundError:
             return f"Editor not found at: {paths.editor_exe}"
         except Exception as e:
@@ -112,6 +113,10 @@ def register_launch_tools(
         while (time.monotonic() - start) < timeout:
             if await UEMCPClient.probe_endpoint(mcp_url, timeout=2.0):
                 elapsed = round(time.monotonic() - start, 1)
+                state.purge_dead_instances(
+                    project_path=project.uproject_path,
+                    port=project.mcp_port,
+                )
                 instance = state.register_instance(
                     url=mcp_url,
                     port=project.mcp_port,

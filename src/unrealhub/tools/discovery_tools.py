@@ -105,6 +105,8 @@ def register_discovery_tools(mcp: FastMCP, get_config, get_state) -> None:
                 if existing:
                     project_path, pid = _match_proc_for_port(r["port"])
                     state.update_status(existing[0].auto_id, "online", pid=pid)
+                    for stale in existing[1:]:
+                        state.update_status(stale.auto_id, "offline")
                     state.save()
                     report_lines.append(
                         f"  {existing[0].auto_id} (port {r['port']}): "

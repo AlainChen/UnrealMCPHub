@@ -45,7 +45,7 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep, CallMcpTool
 | **编译** | `build_project` | action, target, configuration | UBT 编译/打包 |
 | **启动** | `launch_editor` | action, exec_cmds | 编辑器生命周期 |
 | | `get_editor_status` | — | 进程状态 |
-| **实例** | `discover_instances` | rescan | 发现 UE 实例（自动清理僵尸、按项目去重） |
+| **实例** | `discover_instances` | rescan | 发现 UE 实例（自动清理僵尸、按项目去重、同端口去重） |
 | | `manage_instance` | action, instance | 切换活跃实例 |
 | **监控** | `get_instance_health` | instance | 健康检查 |
 | | `get_log` | source, tail_lines | 日志读取 |
@@ -84,15 +84,17 @@ ue_call("spawn_actor", {...}, domain="level")          # 调用域工具
 3. 僵尸检测：标记为 online/starting 但端口无响应且 PID 已死 → 标记 offline
 4. 死实例去重：同一 project_path 的多个死实例只保留最近一个
 5. 对每个在线端口：复用已有实例 或 注册新实例
+6. 同端口去重：同端口多个实例只保留第一个为 online，其余标记 offline
 ```
 
 **行为要点**：
 - 无需手动 `manage_instance(action='unregister')` 清理死实例
 - `rescan=True` 自动识别僵尸（端口无响应 + PID 已死 → offline）
 - 同一项目的死亡实例自动归并，只保留最近一个
+- 同端口重复实例自动归并：`register_instance` 复用同端口在线实例，`discover_instances` 兜底标记多余实例 offline
 - ProcessWatcher 后台每 5 分钟自动清理超龄 crashed 实例
 
-**崩溃后实例切换**：编辑器崩溃后重启会产生新实例（如 `ue20`），但活跃实例可能仍指向旧的已崩溃实例。需要手动切换：
+**崩溃后实例切换**：编辑器崩溃后重启时，`register_instance` 会自动复用同端口的已有实例，活跃实例通常自动指向正确实例。极少数情况下若仍指向旧实例，可手动切换：
 
 ```
 manage_instance(action="use", instance="ue20")
@@ -341,7 +343,7 @@ def spawn_mesh(asset, x, y, z, sx, sy, sz, label=''):
 11. **Domain 动态发现**：不要假设固定的 domain 列表，每次会话用 `ue_list_domains()` 发现当前可用 domain
 12. **Widget Tree 优先**：查找 UI 元素时优先用 `slate_find_widgets_by_type` 或 `slate_get_all_text_blocks`，而非盲目点击坐标
 13. **UMG 路径约束**：UMG 工具的 C++ 后端硬编码资产路径为 `/Game/Widgets/`，Python `path` 参数当前被忽略
-14. **崩溃后切换实例**：编辑器崩溃重启后，活跃实例可能仍指向旧实例，需 `manage_instance(action="use")` 切换
+14. **崩溃后实例自动复用**：编辑器崩溃重启后，同端口实例会自动复用，通常无需手动切换。若仍有异常可用 `manage_instance(action="use")` 手动切换
 
 ---
 

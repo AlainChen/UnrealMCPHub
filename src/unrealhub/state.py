@@ -120,6 +120,26 @@ class StateStore:
         engine_root: str = "",
         pid: int | None = None,
     ) -> InstanceState:
+        # Reuse an existing alive instance on the same port instead of
+        # creating a duplicate (prevents ghost entries like ue3+ue4 on 8422).
+        with self._lock:
+            reuse_id: str | None = None
+            for aid, inst in self._instances.items():
+                if inst.port == port and inst.status in ("online", "starting"):
+                    reuse_id = aid
+                    break
+
+        if reuse_id:
+            reactivated = self.reactivate_instance(
+                reuse_id,
+                url=url, port=port,
+                project_path=project_path,
+                engine_root=engine_root,
+                pid=pid,
+            )
+            if reactivated:
+                return reactivated
+
         now = datetime.now().isoformat()
         auto_id = f"ue{self._next_id}"
         self._next_id += 1
