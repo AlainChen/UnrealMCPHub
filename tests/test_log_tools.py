@@ -14,9 +14,7 @@ def _setup(tmp_home):
     mcp = FastMCP("test")
     config = MagicMock()
     store = StateStore()
-    store.register_instance(
-        url="http://localhost:8422/mcp", port=8422, pid=1234
-    )
+    store.upsert(port=8422, project_path="G:/Proj/A.uproject", pid=1234)
     register_log_tools(mcp, lambda: config, lambda: store)
     tools = {t.name: t.fn for t in mcp._tool_manager.list_tools()}
     return store, config, tools

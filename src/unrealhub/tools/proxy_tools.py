@@ -20,9 +20,9 @@ def register_proxy_tools(mcp: FastMCP, get_state, get_client) -> None:
         state = get_state()
         summary = state.list_instances_summary()
         active = state.get_active_instance()
-        if active and active.status == "crashed":
+        if active and active.status == "offline" and active.crash_count > 0:
             return (
-                f"UE instance '{active.auto_id}' has CRASHED.\n"
+                f"UE instance '{active.key}' is OFFLINE (crashed x{active.crash_count}).\n"
                 f"Use get_log(source='crash') for details, or launch_editor(action='restart') to restart.\n"
                 f"\n{summary}"
             )
@@ -104,13 +104,13 @@ def register_proxy_tools(mcp: FastMCP, get_state, get_client) -> None:
         raise _UECrashed()
 
     def _handle_crash(state, active, client) -> None:
-        """Mark the instance as crashed and invalidate the client."""
-        if active and active.status != "crashed":
-            state.update_status(active.auto_id, "crashed")
-            state.increment_crash_count(active.auto_id)
+        """Mark the instance as offline (crashed) and invalidate the client."""
+        if active and active.status == "online":
+            state.update_status(active.key, "offline")
+            state.increment_crash_count(active.key)
             logger.warning(
                 "UE instance '%s' (PID %s) crashed during tool call",
-                active.auto_id,
+                active.key,
                 active.pid,
             )
         if client:
@@ -118,9 +118,9 @@ def register_proxy_tools(mcp: FastMCP, get_state, get_client) -> None:
 
     def _crash_message(active) -> str:
         pid_info = f" (PID {active.pid})" if active and active.pid else ""
-        inst_id = active.auto_id if active else "unknown"
+        inst_key = active.key if active else "unknown"
         return (
-            f"[UE CRASHED] Instance '{inst_id}'{pid_info} crashed during tool execution.\n"
+            f"[UE CRASHED] Instance '{inst_key}'{pid_info} crashed during tool execution.\n"
             f"Use get_log(source='crash') for crash details, "
             f"or launch_editor(action='restart') to restart."
         )
@@ -148,8 +148,7 @@ def register_proxy_tools(mcp: FastMCP, get_state, get_client) -> None:
             )
 
         lines = [
-            f"Active instance: {active.auto_id}"
-            + (f" ({active.alias})" if active.alias else ""),
+            f"Active instance: {active.key}",
             f"Status: {active.status}",
             f"URL: {active.url}",
             f"PID: {active.pid or 'unknown'}",
@@ -203,8 +202,8 @@ def register_proxy_tools(mcp: FastMCP, get_state, get_client) -> None:
         if not domains_info and not domain_names:
             return "No domains registered on the active UE instance."
 
-        inst_id = active.auto_id if active else "unknown"
-        lines = [f"UE Instance '{inst_id}' has {len(domains_info or domain_names)} domain(s):\n"]
+        inst_key = active.key if active else "unknown"
+        lines = [f"UE Instance '{inst_key}' has {len(domains_info or domain_names)} domain(s):\n"]
         if domains_info:
             for info in domains_info:
                 name = info.get("domain", "?")
@@ -262,8 +261,8 @@ def register_proxy_tools(mcp: FastMCP, get_state, get_client) -> None:
         if not tools:
             return "No tools returned from UE instance."
 
-        inst_id = active.auto_id if active else "unknown"
-        lines = [f"UE Instance '{inst_id}' has {len(tools)} tool(s):\n"]
+        inst_key = active.key if active else "unknown"
+        lines = [f"UE Instance '{inst_key}' has {len(tools)} tool(s):\n"]
         for t in tools:
             lines.append(f"### {t.get('name', '?')}")
             if t.get("description"):
@@ -332,7 +331,7 @@ def register_proxy_tools(mcp: FastMCP, get_state, get_client) -> None:
         duration = (time.time() - start) * 1000
 
         if active:
-            state.record_tool_call(active.auto_id, log_name, result["success"], duration)
+            state.record_tool_call(active.key, log_name, result["success"], duration)
             state.save()
 
         crash_msg = _check_crash_fallback(
@@ -368,7 +367,7 @@ def register_proxy_tools(mcp: FastMCP, get_state, get_client) -> None:
 
         if active:
             state.record_tool_call(
-                active.auto_id, "run_python_script", result["success"], duration
+                active.key, "run_python_script", result["success"], duration
             )
             state.save()
 

@@ -27,7 +27,7 @@ class TestGetClient:
         old_clients = server._clients.copy()
         try:
             store = StateStore()
-            store.register_instance(url="http://localhost:8422/mcp", port=8422)
+            store.upsert(port=8422, project_path="G:/Proj/A.uproject", status="offline")
             server._state = store
             server._clients.clear()
 
@@ -43,8 +43,8 @@ class TestGetClient:
         old_clients = server._clients.copy()
         try:
             store = StateStore()
-            store.register_instance(
-                url="http://localhost:8422/mcp", port=8422, pid=1234
+            store.upsert(
+                port=8422, project_path="G:/Proj/A.uproject", pid=1234
             )
             server._state = store
             server._clients.clear()
@@ -63,8 +63,8 @@ class TestGetClient:
         old_clients = server._clients.copy()
         try:
             store = StateStore()
-            store.register_instance(
-                url="http://localhost:8422/mcp", port=8422, pid=1234
+            store.upsert(
+                port=8422, project_path="G:/Proj/A.uproject", pid=1234
             )
             server._state = store
             server._clients.clear()

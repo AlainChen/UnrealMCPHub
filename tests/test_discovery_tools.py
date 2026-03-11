@@ -12,6 +12,7 @@ def _setup(tmp_home):
     mcp = FastMCP("test")
     config = MagicMock()
     config.get_scan_ports.return_value = [8422, 8423]
+    config.get_extended_ports.return_value = list(range(8000, 8010))
     store = StateStore()
     register_discovery_tools(mcp, lambda: config, lambda: store)
     tools = {t.name: t.fn for t in mcp._tool_manager.list_tools()}
@@ -39,9 +40,9 @@ class TestDiscoverInstancesNoRescan:
     @pytest.mark.asyncio
     async def test_lists_known(self, tmp_home):
         store, _, tools = _setup(tmp_home)
-        store.register_instance(url="http://localhost:8422/mcp", port=8422, pid=100)
+        store.upsert(port=8422, project_path="G:/Proj/A.uproject", pid=100)
         result = await tools["discover_instances"]()
-        assert "ue1" in result
+        assert "A:8422" in result
 
 
 class TestManageInstanceRegister:
@@ -63,8 +64,8 @@ class TestManageInstanceUnregister:
     @pytest.mark.asyncio
     async def test_unregister(self, tmp_home):
         store, _, tools = _setup(tmp_home)
-        store.register_instance(url="http://localhost:8422/mcp", port=8422)
-        result = await tools["manage_instance"]("unregister", instance="ue1")
+        store.upsert(port=8422, project_path="G:/Proj/A.uproject")
+        result = await tools["manage_instance"]("unregister", instance="A:8422")
         assert "removed" in result.lower()
 
     @pytest.mark.asyncio
@@ -74,24 +75,23 @@ class TestManageInstanceUnregister:
         assert "not found" in result.lower()
 
 
-class TestManageInstanceSetAlias:
-    @pytest.mark.asyncio
-    async def test_set_alias(self, tmp_home):
-        store, _, tools = _setup(tmp_home)
-        store.register_instance(url="http://localhost:8422/mcp", port=8422)
-        result = await tools["manage_instance"]("set_alias", instance="ue1", alias="MyGame")
-        assert "MyGame" in result
-
-
 class TestManageInstanceUse:
     @pytest.mark.asyncio
     async def test_use(self, tmp_home):
         store, _, tools = _setup(tmp_home)
-        store.register_instance(url="http://localhost:8422/mcp", port=8422)
-        store.register_instance(url="http://localhost:8423/mcp", port=8423)
-        result = await tools["manage_instance"]("use", instance="ue2")
+        store.upsert(port=8422, project_path="G:/Proj/A.uproject")
+        store.upsert(port=8423, project_path="G:/Proj/B.uproject")
+        result = await tools["manage_instance"]("use", instance="B:8423")
         assert "switched" in result.lower()
-        assert store.get_active_instance().auto_id == "ue2"
+        assert store.get_active_instance().key == "B:8423"
+
+    @pytest.mark.asyncio
+    async def test_use_by_port(self, tmp_home):
+        store, _, tools = _setup(tmp_home)
+        store.upsert(port=8422, project_path="G:/Proj/A.uproject")
+        store.upsert(port=8423, project_path="G:/Proj/B.uproject")
+        result = await tools["manage_instance"]("use", instance="8423")
+        assert "switched" in result.lower()
 
     @pytest.mark.asyncio
     async def test_use_not_found(self, tmp_home):
@@ -112,3 +112,73 @@ class TestManageInstanceUnknownAction:
         _, _, tools = _setup(tmp_home)
         result = await tools["manage_instance"]("fly")
         assert "unknown action" in result.lower()
+
+
+class TestRegisterOrphanProcesses:
+    def test_registers_unknown_ue_process(self, tmp_home):
+        from unittest.mock import patch
+        from unrealhub.tools.discovery_tools import _register_orphan_processes
+
+        store, _, _ = _setup(tmp_home)
+        fake_procs = [
+            {"pid": 5555, "name": "UnrealEditor.exe", "cmdline": [], "project_path": "G:/Proj/B.uproject"},
+        ]
+        with patch("unrealhub.tools.discovery_tools.find_unreal_editor_processes", return_value=fake_procs):
+            report = _register_orphan_processes(store)
+        assert len(report) == 1
+        assert "NO MCP" in report[0]
+        inst = store.get_instance("B:0")
+        assert inst is not None
+        assert inst.pid == 5555
+        assert inst.status == "offline"
+
+    def test_skips_already_registered_by_pid(self, tmp_home):
+        from unittest.mock import patch
+        from unrealhub.tools.discovery_tools import _register_orphan_processes
+
+        store, _, _ = _setup(tmp_home)
+        store.upsert(port=8422, project_path="G:/Proj/A.uproject", pid=1234)
+        fake_procs = [
+            {"pid": 1234, "name": "UnrealEditor.exe", "cmdline": [], "project_path": "G:/Proj/A.uproject"},
+        ]
+        with patch("unrealhub.tools.discovery_tools.find_unreal_editor_processes", return_value=fake_procs):
+            report = _register_orphan_processes(store)
+        assert report == []
+        assert len(store.list_instances()) == 1
+
+    def test_skips_already_registered_by_project(self, tmp_home):
+        from unittest.mock import patch
+        from unrealhub.tools.discovery_tools import _register_orphan_processes
+
+        store, _, _ = _setup(tmp_home)
+        store.upsert(port=8422, project_path="G:/Proj/A.uproject", pid=9999)
+        fake_procs = [
+            {"pid": 5555, "name": "UnrealEditor.exe", "cmdline": [], "project_path": "G:/Proj/A.uproject"},
+        ]
+        with patch("unrealhub.tools.discovery_tools.find_unreal_editor_processes", return_value=fake_procs):
+            report = _register_orphan_processes(store)
+        assert report == []
+
+    def test_no_ue_processes(self, tmp_home):
+        from unittest.mock import patch
+        from unrealhub.tools.discovery_tools import _register_orphan_processes
+
+        store, _, _ = _setup(tmp_home)
+        with patch("unrealhub.tools.discovery_tools.find_unreal_editor_processes", return_value=[]):
+            report = _register_orphan_processes(store)
+        assert report == []
+
+    def test_process_without_project_path(self, tmp_home):
+        from unittest.mock import patch
+        from unrealhub.tools.discovery_tools import _register_orphan_processes
+
+        store, _, _ = _setup(tmp_home)
+        fake_procs = [
+            {"pid": 7777, "name": "UnrealEditor.exe", "cmdline": [], "project_path": None},
+        ]
+        with patch("unrealhub.tools.discovery_tools.find_unreal_editor_processes", return_value=fake_procs):
+            report = _register_orphan_processes(store)
+        assert len(report) == 1
+        inst = store.get_instance("unknown:0")
+        assert inst is not None
+        assert inst.pid == 7777

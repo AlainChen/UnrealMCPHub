@@ -14,9 +14,9 @@ def register_session_tools(mcp: FastMCP, get_state) -> None:
         inst = state.get_active_instance() if not instance else state.get_instance(instance)
         if not inst:
             return "No instance found."
-        state.add_note(inst.auto_id, content)
+        state.add_note(inst.key, content)
         state.save()
-        return f"Note added to {inst.auto_id}: {(content[:100] + '...') if len(content) > 100 else content}"
+        return f"Note added to {inst.key}: {(content[:100] + '...') if len(content) > 100 else content}"
 
     @mcp.tool()
     async def get_session(
@@ -38,19 +38,19 @@ def register_session_tools(mcp: FastMCP, get_state) -> None:
             return "No instance found."
 
         if scope == "notes":
-            notes = state.get_notes(inst.auto_id)
+            notes = state.get_notes(inst.key)
             if not notes:
-                return f"No notes for {inst.auto_id}."
-            lines = [f"Notes for {inst.auto_id} ({len(notes)}):"]
+                return f"No notes for {inst.key}."
+            lines = [f"Notes for {inst.key} ({len(notes)}):"]
             for n in notes:
                 lines.append(f"  [{n.timestamp}] {n.content}")
             return "\n".join(lines)
 
         if scope == "history":
-            history = state.get_call_history(inst.auto_id, limit=limit)
+            history = state.get_call_history(inst.key, limit=limit)
             if not history:
-                return f"No call history for {inst.auto_id}."
-            lines = [f"Call history for {inst.auto_id} (last {len(history)}):"]
+                return f"No call history for {inst.key}."
+            lines = [f"Call history for {inst.key} (last {len(history)}):"]
             for h in history:
                 status = "OK" if h.success else "FAIL"
                 lines.append(f"  [{h.timestamp}] {h.tool_name} -> {status} ({h.duration_ms:.0f}ms)")
@@ -60,12 +60,11 @@ def register_session_tools(mcp: FastMCP, get_state) -> None:
             return inst.model_dump_json(indent=2)
 
         lines = [
-            f"=== Session: {inst.auto_id} ===",
+            f"=== Session: {inst.key} ===",
             f"URL: {inst.url}",
             f"Status: {inst.status}",
             f"Project: {inst.project_path}",
             f"Crashes: {inst.crash_count}",
-            f"First seen: {inst.first_seen}",
             f"Last seen: {inst.last_seen}",
             "",
             f"--- Notes ({len(inst.notes)}) ---",

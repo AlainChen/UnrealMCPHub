@@ -45,8 +45,8 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep, CallMcpTool
 | **编译** | `build_project` | action, target, configuration | UBT 编译/打包 |
 | **启动** | `launch_editor` | action, exec_cmds, build_config | 编辑器生命周期（build_config: Development/DebugGame/Debug） |
 | | `get_editor_status` | — | 进程状态 |
-| **实例** | `discover_instances` | rescan | 发现 UE 实例（自动清理僵尸、按项目去重、同端口去重） |
-| | `manage_instance` | action, instance | 切换活跃实例 |
+| **实例** | `discover_instances` | rescan | 发现 Unreal MCP 实例（两阶段端口扫描 + serverInfo 验证 + MCP 自识别 + 自动注册 + 孤儿进程扫描） |
+| | `manage_instance` | action, instance, url, port | 注册/注销/切换实例（instance 支持 key/port/项目名） |
 | **监控** | `get_instance_health` | instance | 健康检查 |
 | | `get_log` | source, tail_lines | 日志读取 |
 | **代理** | `ue_status` | — | UE 实例状态 |
@@ -72,40 +72,59 @@ ue_call("spawn_actor", {...}, domain="level")          # 调用域工具
 > **关键原则**：永远通过 `ue_list_domains()` 动态发现，不要硬编码 domain 名称。
 > 新的 domain 可能在 UE 插件更新、用户安装扩展模块后出现。
 
-### 1.4 实例生命周期
+### 1.4 实例管理
 
-同一项目可以有多个存活实例（合法场景），但死亡实例会自动归并。
+#### 唯一标识：(project_name, port) 复合键
 
-`discover_instances(rescan=True)` 流程：
+每个实例由 `项目名:端口` 唯一标识，例如 `Develop57:8422`。同一项目同一端口重启 = 同一实例（自动更新 PID/状态）。
+
+`port=0` 是特殊值，表示"UE 进程在运行但未启用 MCP"。当该进程后续启用 MCP 并被发现时，`ProjectName:0` 会自动升级为 `ProjectName:8422`。
+
+#### 实例状态
+
+仅两态：`online` / `offline`。没有中间态。
+
+#### `discover_instances(rescan=True)` 流程
 
 ```
-1. 清理已 crashed/offline 超过 1 小时的死实例
-2. 扫描配置端口
-3. 僵尸检测：标记为 online/starting 但端口无响应且 PID 已死 → 标记 offline
-4. 死实例去重：同一 project_path 的多个死实例只保留最近一个
-5. 对每个在线端口：复用已有实例 或 注册新实例
-6. 同端口去重：同端口多个实例只保留第一个为 online，其余标记 offline
+Phase 1: 扫描优先端口 [8422, 8423, 8424, 8425]（<1 秒）
+Phase 2: 若 Phase 1 未发现任何实例 → 扩展扫描 8000-8999（3-5 秒）
+Phase 3: 标记未响应端口的在线实例为 offline
+Phase 4: 对每个响应端口执行 identify + upsert
+Phase 5: psutil 扫描所有 UE 进程，未被注册的以 port=0 status=offline 纳入管理
+
+对每个响应端口（Phase 4）:
+  1. probe_unreal_mcp: 验证 serverInfo.name 包含 "Unreal"（排除非 UE 的 MCP）
+  2. _identify_instance: 通过 MCP call_tool("get_unreal_state") 获取项目路径
+     （fallback: psutil 查端口归属进程）
+  3. state.upsert: 自动注册或更新实例
+
+对未启用 MCP 的 UE 进程（Phase 5）:
+  1. psutil 枚举所有 UnrealEditor 进程
+  2. 过滤掉已通过 PID 或 project_path 关联的进程
+  3. state.upsert(port=0, status="offline"): 注册为不可联通
+  4. 后续该进程启用 MCP 后，discover 会自动升级 ProjectName:0 → ProjectName:{port}
 ```
 
 **行为要点**：
-- 无需手动 `manage_instance(action='unregister')` 清理死实例
-- `rescan=True` 自动识别僵尸（端口无响应 + PID 已死 → offline）
-- 同一项目的死亡实例自动归并，只保留最近一个
-- 同端口重复实例自动归并：`register_instance` 复用同端口在线实例，`discover_instances` 兜底标记多余实例 offline
-- ProcessWatcher 后台每 5 分钟自动清理超龄 crashed 实例
+- 任何运行中的 Unreal MCP 实例都会被自动发现并注册，无论是 Hub 启动的还是手动启动的
+- **没有启用 MCP 的 UE 编辑器也会被发现**，标记为 `[NO MCP]` offline 状态
+- 通过 MCP 协议直接问实例"你是谁"（`get_unreal_state`），获取准确项目路径
+- 复合键天然去重：同项目同端口不会产生重复条目
+- 离线超过 1 小时的实例自动清理
+- ProcessWatcher 后台每 5 秒健康检查在线实例
 
-**崩溃后实例切换**：编辑器崩溃后重启时，`register_instance` 会自动复用同端口的已有实例，活跃实例通常自动指向正确实例。极少数情况下若仍指向旧实例，可手动切换：
+#### 实例切换
 
-```
-manage_instance(action="use", instance="ue20")
-```
-
-**别名管理**：可为实例设置别名，后续通过别名操作：
+实例可通过完整 key、端口号或项目名查找：
 
 ```
-manage_instance(action="set_alias", instance="ue1", alias="MyProject")
-manage_instance(action="use", instance="MyProject")   // 通过别名切换
+manage_instance(action="use", instance="Develop57:8422")  // 完整 key
+manage_instance(action="use", instance="8422")             // 按端口
+manage_instance(action="use", instance="Develop57")        // 按项目名
 ```
+
+**崩溃后**：编辑器崩溃重启后，upsert 自动更新同 key 的实例，活跃实例通常自动指向正确实例。
 
 ---
 
@@ -343,7 +362,7 @@ def spawn_mesh(asset, x, y, z, sx, sy, sz, label=''):
 11. **Domain 动态发现**：不要假设固定的 domain 列表，每次会话用 `ue_list_domains()` 发现当前可用 domain
 12. **Widget Tree 优先**：查找 UI 元素时优先用 `slate_find_widgets_by_type` 或 `slate_get_all_text_blocks`，而非盲目点击坐标
 13. **UMG 路径约束**：UMG 工具的 C++ 后端硬编码资产路径为 `/Game/Widgets/`，Python `path` 参数当前被忽略
-14. **崩溃后实例自动复用**：编辑器崩溃重启后，同端口实例会自动复用，通常无需手动切换。若仍有异常可用 `manage_instance(action="use")` 手动切换
+14. **崩溃后实例自动复用**：编辑器崩溃重启后，upsert 自动更新同 (project_name:port) 的实例，通常无需手动切换。可用 `manage_instance(action="use", instance="端口号或项目名")` 手动切换
 
 ---
 

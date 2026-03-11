@@ -218,24 +218,19 @@ def register_launch_tools(
         while (time.monotonic() - start) < timeout:
             if await UEMCPClient.probe_endpoint(mcp_url, timeout=2.0):
                 elapsed = round(time.monotonic() - start, 1)
-                state.purge_dead_instances(
-                    project_path=project.uproject_path,
+                instance = state.upsert(
                     port=project.mcp_port,
-                )
-                instance = state.register_instance(
+                    project_path=project.uproject_path,
                     url=mcp_url,
-                    port=project.mcp_port,
-                    project_path=project.uproject_path,
                     engine_root=project.engine_root,
                     pid=editor_pid,
+                    status="online",
                 )
-                state.update_status(instance.auto_id, "online", pid=editor_pid)
-                state.save()
                 return (
                     f"Editor launched ({mode_label}) and MCP ready in {elapsed}s!\n"
                     f"PID: {editor_pid}\n"
                     f"MCP: {mcp_url}\n"
-                    f"Instance: {instance.auto_id}"
+                    f"Instance: {instance.key}"
                 )
             await asyncio.sleep(poll_interval)
             poll_interval = min(poll_interval + 1.0, 10.0)
@@ -347,7 +342,7 @@ def register_launch_tools(
             # and collect PIDs to watch (regardless of MCP call result).
             project_instances = [
                 inst for inst in state.list_instances()
-                if inst.status in ("online", "starting")
+                if inst.status == "online"
                 and (inst.project_path or "").replace("\\", "/").lower() == project_norm
             ]
             watch_pids: set[int] = set()
@@ -360,7 +355,7 @@ def register_launch_tools(
                     if inst.pid and is_process_alive(inst.pid):
                         watch_pids.add(inst.pid)
                     msgs.append(
-                        f"Quit signal sent to '{inst.auto_id}' (PID {inst.pid})"
+                        f"Quit signal sent to '{inst.key}' (PID {inst.pid})"
                     )
 
             # Also include any untracked OS-level UE processes for this project
@@ -394,14 +389,11 @@ def register_launch_tools(
             for t in bg_tasks:
                 t.cancel()
 
-            # Phase 4: mark all tracked instances for this project as offline
             for inst in state.list_instances():
-                if inst.status in ("online", "starting"):
-                    inst_proj = (
-                        getattr(inst, "project_path", "") or ""
-                    ).replace("\\", "/").lower()
+                if inst.status == "online":
+                    inst_proj = (inst.project_path or "").replace("\\", "/").lower()
                     if inst_proj == project_norm:
-                        state.update_status(inst.auto_id, "offline")
+                        state.update_status(inst.key, "offline")
             state.save()
             return "; ".join(msgs)
 

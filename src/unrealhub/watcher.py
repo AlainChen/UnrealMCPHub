@@ -5,20 +5,17 @@ from typing import Callable
 
 logger = logging.getLogger(__name__)
 
-
-PURGE_INTERVAL_CYCLES = 60  # run purge every N health-check cycles
+PURGE_INTERVAL_CYCLES = 60
+DISCOVER_INTERVAL_CYCLES = 6   # auto-discover every 6 cycles (30s at 5s interval)
 STALE_HOURS = 1.0
 
 
 class ProcessWatcher:
-    """Background thread that monitors UE instance health."""
+    """Background thread that monitors UE instance health and auto-discovers instances."""
 
-    def __init__(self, get_state, interval: float = 5.0):
-        """
-        get_state: callable returning StateStore
-        interval: seconds between health checks
-        """
+    def __init__(self, get_state, get_config=None, interval: float = 5.0):
         self._get_state = get_state
+        self._get_config = get_config
         self._interval = interval
         self._thread: threading.Thread | None = None
         self._stop_event = threading.Event()
@@ -40,7 +37,7 @@ class ProcessWatcher:
         logger.info("ProcessWatcher stopped")
 
     def on_crash(self, callback: Callable) -> None:
-        """Register a callback for crash events. callback(instance_id: str)"""
+        """Register a callback for crash events. callback(instance_key: str)"""
         self._on_crash_callbacks.append(callback)
 
     def _run(self) -> None:
@@ -59,42 +56,66 @@ class ProcessWatcher:
     async def _check_all(self) -> None:
         state = self._get_state()
         for instance in state.list_instances():
-            if instance.status not in ("online", "starting"):
+            if instance.status != "online":
                 continue
             await self._check_instance(state, instance)
 
         self._cycle_count += 1
+
+        if self._cycle_count % DISCOVER_INTERVAL_CYCLES == 0:
+            await self._auto_discover(state)
+
         if self._cycle_count >= PURGE_INTERVAL_CYCLES:
             self._cycle_count = 0
-            purged = state.purge_dead_instances(max_age_hours=STALE_HOURS)
+            purged = state.cleanup(max_age_hours=STALE_HOURS)
             if purged:
-                logger.info("Watcher auto-purged stale instances: %s", purged)
+                logger.info("Watcher auto-cleaned stale instances: %s", purged)
 
     async def _check_instance(self, state, instance) -> None:
         from unrealhub.utils.process import is_process_alive
         from unrealhub.ue_client import UEMCPClient
 
-        pid_alive = True
-        if instance.pid:
-            pid_alive = is_process_alive(instance.pid)
-
         http_ok = await UEMCPClient.probe_endpoint(instance.url, timeout=2.0)
 
-        if not pid_alive and not http_ok:
-            if instance.status != "crashed":
-                state.update_status(instance.auto_id, "crashed")
-                state.increment_crash_count(instance.auto_id)
-                state.save()
-                logger.warning(f"Instance {instance.auto_id} CRASHED (PID gone, HTTP down)")
+        if http_ok:
+            if instance.status != "online":
+                state.update_status(instance.key, "online")
+            return
+
+        pid_alive = instance.pid and is_process_alive(instance.pid)
+        if not pid_alive:
+            was_online = instance.status == "online"
+            state.update_status(instance.key, "offline")
+            if was_online:
+                state.increment_crash_count(instance.key)
+                logger.warning("Instance %s crashed (PID gone, HTTP down)", instance.key)
                 for cb in self._on_crash_callbacks:
                     try:
-                        cb(instance.auto_id)
+                        cb(instance.key)
                     except Exception:
                         pass
-        elif http_ok:
-            state.record_health_check(instance.auto_id, True)
-            if instance.status != "online":
-                state.update_status(instance.auto_id, "online")
-                state.save()
-        elif not http_ok and pid_alive:
-            state.record_health_check(instance.auto_id, False)
+
+    # ------------------------------------------------------------------
+    # Auto-discover: lightweight periodic scan
+    # ------------------------------------------------------------------
+
+    async def _auto_discover(self, state) -> None:
+        """Periodically re-probe offline instances, scan priority ports,
+        and register orphan UE processes. Reuses shared primitives from
+        discovery_tools to avoid logic duplication."""
+        from unrealhub.tools.discovery_tools import (
+            reprobe_offline_instances,
+            scan_ports_for_new,
+            register_orphan_processes,
+        )
+
+        await reprobe_offline_instances(state)
+
+        scan_ports = (
+            self._get_config().get_scan_ports()
+            if self._get_config
+            else [8422, 8423, 8424, 8425]
+        )
+        await scan_ports_for_new(state, scan_ports)
+
+        register_orphan_processes(state)

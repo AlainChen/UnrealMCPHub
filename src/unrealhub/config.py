@@ -24,6 +24,7 @@ class HubConfig(BaseModel):
     projects: dict[str, ProjectEntry] = {}
     active_project: str = ""
     scan_ports: list[int] = [8422, 8423, 8424, 8425]
+    scan_ports_extended: list[int] = list(range(8000, 9000))
     plugin_repo: str = DEFAULT_PLUGIN_REPO
     plugin_local_cache: str = ""
 
@@ -102,6 +103,9 @@ class ProjectConfig:
 
     def get_scan_ports(self) -> list[int]:
         return list(self._config.scan_ports)
+
+    def get_extended_ports(self) -> list[int]:
+        return list(self._config.scan_ports_extended)
 
     def get_plugin_repo(self) -> str:
         return self._config.plugin_repo

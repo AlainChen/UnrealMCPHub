@@ -21,11 +21,11 @@ def get_config() -> ProjectConfig:
     return _config
 
 
-def _on_instance_unregistered(auto_id: str) -> None:
+def _on_instance_unregistered(key: str) -> None:
     """Callback: clean up cached client when an instance is removed."""
-    removed = _clients.pop(auto_id, None)
+    removed = _clients.pop(key, None)
     if removed:
-        logger.debug("Cleaned up cached client for %s", auto_id)
+        logger.debug("Cleaned up cached client for %s", key)
 
 
 def get_state() -> StateStore:
@@ -39,7 +39,7 @@ def get_state() -> StateStore:
 def get_watcher() -> ProcessWatcher:
     global _watcher
     if _watcher is None:
-        _watcher = ProcessWatcher(get_state)
+        _watcher = ProcessWatcher(get_state, get_config)
     return _watcher
 
 
@@ -50,16 +50,16 @@ def get_client(instance_id: str | None) -> UEMCPClient | None:
         active = state.get_active_instance()
         if not active:
             return None
-        instance_id = active.auto_id
+        instance_id = active.key
 
     inst = state.get_instance(instance_id)
-    if not inst or inst.status not in ("online", "starting"):
+    if not inst or inst.status != "online":
         return None
 
-    if instance_id not in _clients:
-        _clients[instance_id] = UEMCPClient(inst.url)
+    if inst.key not in _clients:
+        _clients[inst.key] = UEMCPClient(inst.url)
 
-    return _clients[instance_id]
+    return _clients[inst.key]
 
 
 def get_ue_client_factory():
@@ -257,12 +257,11 @@ def create_hub_mcp() -> FastMCP:
         instances = state.list_instances()
         if instances:
             active_inst = state.get_active_instance()
-            active_id = active_inst.auto_id if active_inst else ""
+            active_key = active_inst.key if active_inst else ""
             for inst in instances:
-                marker = "*" if inst.auto_id == active_id else " "
-                alias = f" ({inst.alias})" if inst.alias else ""
+                marker = "*" if inst.key == active_key else " "
                 sections.append(
-                    f"  {marker} {inst.auto_id}{alias} (port {inst.port}): "
+                    f"  {marker} {inst.key}: "
                     f"{inst.status.upper()}, PID={inst.pid or '?'}"
                 )
                 if inst.project_path:

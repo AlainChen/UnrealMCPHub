@@ -12,7 +12,7 @@ def _make_proxy_module():
     mcp = FastMCP("test")
 
     store = MagicMock(spec=StateStore)
-    store.list_instances_summary.return_value = "  ue1 (ue1): online *"
+    store.list_instances_summary.return_value = "  A:8422: online *"
     store.get_active_instance.return_value = None
 
     get_client = MagicMock(return_value=None)
@@ -29,9 +29,8 @@ def _make_online_proxy():
     mcp = FastMCP("test")
 
     active = MagicMock()
-    active.auto_id = "ue1"
+    active.key = "A:8422"
     active.status = "online"
-    active.alias = None
     active.url = "http://localhost:8422/mcp"
     active.pid = 1234
     active.project_path = "/test"
@@ -211,8 +210,8 @@ class TestCrashGuard:
         result = await tools["ue_call"]("slow_tool", {})
         assert "CRASHED" in result
         assert "PID 1234" in result
-        store.update_status.assert_called_once_with("ue1", "crashed")
-        store.increment_crash_count.assert_called_once_with("ue1")
+        store.update_status.assert_called_once_with("A:8422", "offline")
+        store.increment_crash_count.assert_called_once_with("A:8422")
 
     @pytest.mark.asyncio
     @patch("unrealhub.utils.process.is_process_alive", return_value=False)

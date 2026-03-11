@@ -102,25 +102,23 @@ def discover():
     click.echo(f"Scanning ports: {ports}")
 
     async def scan():
+        from unrealhub.tools.discovery_tools import probe_unreal_mcp
+
         results = []
         for port in ports:
             url = f"http://localhost:{port}/mcp"
-            if await UEMCPClient.probe_endpoint(url, timeout=2.0):
+            info = await probe_unreal_mcp(url, timeout=2.0)
+            if info:
                 results.append({"port": port, "url": url})
-                click.echo(f"  Found: port {port}")
+                click.echo(f"  Found Unreal MCP: port {port}")
 
         if not results:
-            click.echo("No instances found.")
+            click.echo("No Unreal MCP instances found.")
             return
 
         for r in results:
-            existing = [i for i in state.list_instances() if i.port == r["port"]]
-            if not existing:
-                inst = state.register_instance(url=r["url"], port=r["port"])
-                click.echo(f"  Registered: {inst.auto_id}")
-            else:
-                state.update_status(existing[0].auto_id, "online")
-                click.echo(f"  Updated: {existing[0].auto_id} -> online")
+            inst = state.upsert(port=r["port"], url=r["url"], status="online")
+            click.echo(f"  Registered: {inst.key}")
 
         state.save()
 

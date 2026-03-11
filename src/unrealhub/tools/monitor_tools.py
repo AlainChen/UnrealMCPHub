@@ -25,15 +25,13 @@ def register_monitor_tools(mcp: FastMCP, get_state, get_watcher) -> None:
         from unrealhub.ue_client import UEMCPClient
 
         lines = [
-            f"Instance: {inst.auto_id}" + (f" ({inst.alias})" if inst.alias else ""),
+            f"Instance: {inst.key}",
             f"URL: {inst.url}",
             f"Status: {inst.status}",
             f"PID: {inst.pid or 'unknown'}",
             f"Project: {inst.project_path or 'unknown'}",
             f"Crash count: {inst.crash_count}",
-            f"First seen: {inst.first_seen}",
             f"Last seen: {inst.last_seen}",
-            f"Last health check: {inst.last_health_check}",
         ]
 
         if inst.pid:

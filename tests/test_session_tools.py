@@ -11,7 +11,7 @@ from unrealhub.tools.session_tools import register_session_tools
 def _setup(tmp_home):
     mcp = FastMCP("test")
     store = StateStore()
-    store.register_instance(url="http://localhost:8422/mcp", port=8422, pid=1234)
+    store.upsert(port=8422, project_path="G:/Proj/A.uproject", pid=1234)
     register_session_tools(mcp, lambda: store)
     tools = {t.name: t.fn for t in mcp._tool_manager.list_tools()}
     return store, tools
@@ -23,7 +23,7 @@ class TestAddNote:
         store, tools = _setup(tmp_home)
         result = await tools["add_note"]("Test observation")
         assert "added" in result.lower()
-        notes = store.get_notes("ue1")
+        notes = store.get_notes("A:8422")
         assert len(notes) == 1
         assert notes[0].content == "Test observation"
 
@@ -55,8 +55,8 @@ class TestGetSession:
     @pytest.mark.asyncio
     async def test_notes_scope_with_content(self, tmp_home):
         store, tools = _setup(tmp_home)
-        store.add_note("ue1", "Note 1")
-        store.add_note("ue1", "Note 2")
+        store.add_note("A:8422", "Note 1")
+        store.add_note("A:8422", "Note 2")
         result = await tools["get_session"]("notes")
         assert "Note 1" in result
         assert "Note 2" in result
@@ -70,8 +70,8 @@ class TestGetSession:
     @pytest.mark.asyncio
     async def test_history_scope_with_data(self, tmp_home):
         store, tools = _setup(tmp_home)
-        store.record_tool_call("ue1", "run_python", True, 42.0)
-        store.record_tool_call("ue1", "get_dispatch", False, 100.0)
+        store.record_tool_call("A:8422", "run_python", True, 42.0)
+        store.record_tool_call("A:8422", "get_dispatch", False, 100.0)
         result = await tools["get_session"]("history")
         assert "run_python" in result
         assert "OK" in result
@@ -80,8 +80,8 @@ class TestGetSession:
     @pytest.mark.asyncio
     async def test_full_scope_text(self, tmp_home):
         store, tools = _setup(tmp_home)
-        store.add_note("ue1", "A note")
-        store.record_tool_call("ue1", "test", True, 1.0)
+        store.add_note("A:8422", "A note")
+        store.record_tool_call("A:8422", "test", True, 1.0)
         result = await tools["get_session"]("full")
         assert "Session" in result
         assert "A note" in result
@@ -93,13 +93,13 @@ class TestGetSession:
         import json
         result = await tools["get_session"]("full", "", "json")
         data = json.loads(result)
-        assert data["auto_id"] == "ue1"
+        assert data["key"] == "A:8422"
         assert "url" in data
 
     @pytest.mark.asyncio
     async def test_default_scope_is_full(self, tmp_home):
         store, tools = _setup(tmp_home)
-        store.add_note("ue1", "My note")
+        store.add_note("A:8422", "My note")
         result = await tools["get_session"]()
         assert "Session" in result
         assert "My note" in result
