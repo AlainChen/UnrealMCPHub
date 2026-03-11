@@ -117,14 +117,14 @@ class TestManageInstanceUnknownAction:
 class TestRegisterOrphanProcesses:
     def test_registers_unknown_ue_process(self, tmp_home):
         from unittest.mock import patch
-        from unrealhub.tools.discovery_tools import _register_orphan_processes
+        from unrealhub.tools.discovery_tools import register_orphan_processes
 
         store, _, _ = _setup(tmp_home)
         fake_procs = [
             {"pid": 5555, "name": "UnrealEditor.exe", "cmdline": [], "project_path": "G:/Proj/B.uproject"},
         ]
         with patch("unrealhub.tools.discovery_tools.find_unreal_editor_processes", return_value=fake_procs):
-            report = _register_orphan_processes(store)
+            report = register_orphan_processes(store)
         assert len(report) == 1
         assert "NO MCP" in report[0]
         inst = store.get_instance("B:0")
@@ -134,7 +134,7 @@ class TestRegisterOrphanProcesses:
 
     def test_skips_already_registered_by_pid(self, tmp_home):
         from unittest.mock import patch
-        from unrealhub.tools.discovery_tools import _register_orphan_processes
+        from unrealhub.tools.discovery_tools import register_orphan_processes
 
         store, _, _ = _setup(tmp_home)
         store.upsert(port=8422, project_path="G:/Proj/A.uproject", pid=1234)
@@ -142,13 +142,13 @@ class TestRegisterOrphanProcesses:
             {"pid": 1234, "name": "UnrealEditor.exe", "cmdline": [], "project_path": "G:/Proj/A.uproject"},
         ]
         with patch("unrealhub.tools.discovery_tools.find_unreal_editor_processes", return_value=fake_procs):
-            report = _register_orphan_processes(store)
+            report = register_orphan_processes(store)
         assert report == []
         assert len(store.list_instances()) == 1
 
-    def test_skips_already_registered_by_project(self, tmp_home):
+    def test_reports_extra_process_for_same_project(self, tmp_home):
         from unittest.mock import patch
-        from unrealhub.tools.discovery_tools import _register_orphan_processes
+        from unrealhub.tools.discovery_tools import register_orphan_processes
 
         store, _, _ = _setup(tmp_home)
         store.upsert(port=8422, project_path="G:/Proj/A.uproject", pid=9999)
@@ -156,28 +156,30 @@ class TestRegisterOrphanProcesses:
             {"pid": 5555, "name": "UnrealEditor.exe", "cmdline": [], "project_path": "G:/Proj/A.uproject"},
         ]
         with patch("unrealhub.tools.discovery_tools.find_unreal_editor_processes", return_value=fake_procs):
-            report = _register_orphan_processes(store)
-        assert report == []
+            report = register_orphan_processes(store)
+        assert len(report) == 1
+        assert "5555" in report[0]
+        assert "extra process" in report[0]
 
     def test_no_ue_processes(self, tmp_home):
         from unittest.mock import patch
-        from unrealhub.tools.discovery_tools import _register_orphan_processes
+        from unrealhub.tools.discovery_tools import register_orphan_processes
 
         store, _, _ = _setup(tmp_home)
         with patch("unrealhub.tools.discovery_tools.find_unreal_editor_processes", return_value=[]):
-            report = _register_orphan_processes(store)
+            report = register_orphan_processes(store)
         assert report == []
 
     def test_process_without_project_path(self, tmp_home):
         from unittest.mock import patch
-        from unrealhub.tools.discovery_tools import _register_orphan_processes
+        from unrealhub.tools.discovery_tools import register_orphan_processes
 
         store, _, _ = _setup(tmp_home)
         fake_procs = [
             {"pid": 7777, "name": "UnrealEditor.exe", "cmdline": [], "project_path": None},
         ]
         with patch("unrealhub.tools.discovery_tools.find_unreal_editor_processes", return_value=fake_procs):
-            report = _register_orphan_processes(store)
+            report = register_orphan_processes(store)
         assert len(report) == 1
         inst = store.get_instance("unknown:0")
         assert inst is not None
