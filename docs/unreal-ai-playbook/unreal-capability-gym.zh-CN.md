@@ -90,6 +90,13 @@ Gym 当前承担 4 个作用：
 - 新增一个轻量攻击模式
 - 调整受击反馈
 
+最小证据包：
+- 同机位或同阶段的前后对比图
+- 修改点列表
+- 一段运行或日志证据
+- 风险说明
+- readiness 结论
+
 ### Gym-02 Lighting Modify
 
 目标：
@@ -99,6 +106,13 @@ Gym 当前承担 4 个作用：
 - 从白天切到黄昏或夜景
 - 做一次 combat readability pass
 - 做一个小型 cinematic lighting pass
+
+最小证据包：
+- 同机位前后对比图
+- lighting intent 说明
+- 场景可读性结论
+- 性能或烘焙风险说明
+- readiness 结论
 
 ### Gym-03 Level Design Modify
 
@@ -135,3 +149,16 @@ Gym 当前承担 4 个作用：
 它们不是重复关系，而是上下游关系：
 - team workflow 负责“怎么安全地做”
 - gym 负责“我们在不同能力域里能做到什么程度”
+
+## 当前第一阶段结论
+
+当前已经锁定第一批 pilot domain：
+
+- `combat`
+- `lighting`
+
+下一步默认按这个顺序推进：
+
+1. 先用 `Gym-01 Combat Modify` 形成第一份 showcase 任务和证据包
+2. 再用 `Gym-02 Lighting Modify` 形成第二份 showcase 任务和证据包
+3. 最后把两者合并成第一版图文可行性报告

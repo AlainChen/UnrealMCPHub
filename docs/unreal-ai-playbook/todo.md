@@ -44,9 +44,9 @@ Use it to track:
 
 ### Capability Gym
 
-- [ ] lock the first two pilot domains for showcase work
-- [ ] write task templates for `combat/modify` and `lighting/modify`
-- [ ] define the evidence bundle for every gym task: before/after image, validation note, risk summary, readiness score
+- [x] lock the first two pilot domains for showcase work
+- [x] write task templates for `combat/modify` and `lighting/modify`
+- [x] define the evidence bundle for every gym task: before/after image, validation note, risk summary, readiness score
 - [ ] produce the first 图文可行性报告 from two successful gym pilots
 - [ ] decide when stable gym templates should move from docs into `team-unreal-workflow` references
 
