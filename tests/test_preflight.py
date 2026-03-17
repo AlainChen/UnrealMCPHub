@@ -77,3 +77,56 @@ class TestBenchmarkPreflight:
         assert report["allow_continue"] is False
         execution_check = next(c for c in report["checks"] if c["name"] == "execution_query")
         assert execution_check["detail"] == "timeout"
+
+
+class TestBenchmarkArtifact:
+    def test_build_artifact(self):
+        from unrealhub.preflight import build_benchmark_artifact
+
+        report = {
+            "agent": "codex",
+            "model": "gpt-test",
+            "project": "TestProject",
+            "project_path": "configured (path masked)",
+            "instance": "unknown:8422",
+            "endpoint": "reachable loopback endpoint",
+            "checks": [{"name": "mcp_reachable", "ok": True, "detail": "reachable loopback endpoint"}],
+            "allow_continue": False,
+        }
+
+        artifact = build_benchmark_artifact(report, level="L1", scenario="sandbox-prototype-v1")
+        assert artifact["artifact_type"] == "benchmark_preflight"
+        assert artifact["benchmark_level"] == "L1"
+        assert artifact["scenario"] == "sandbox-prototype-v1"
+        assert artifact["project_path"] == "configured (path masked)"
+        assert artifact["instance"] == "active instance (project unresolved)"
+
+    def test_save_artifact(self, tmp_path):
+        from unrealhub.preflight import save_benchmark_artifact
+
+        artifact = {
+            "artifact_type": "benchmark_preflight",
+            "project_path": "configured (path masked)",
+            "endpoint": "reachable loopback endpoint",
+        }
+        output = tmp_path / "artifacts" / "preflight.json"
+
+        path = save_benchmark_artifact(artifact, str(output))
+
+        assert path.exists()
+        text = path.read_text(encoding="utf-8")
+        assert "configured (path masked)" in text
+        assert "reachable loopback endpoint" in text
+
+    def test_make_default_artifact_path(self, tmp_path):
+        from unrealhub.preflight import make_default_artifact_path
+
+        path = make_default_artifact_path(
+            root_dir=str(tmp_path),
+            scenario="smoke-connectivity-v1",
+            level="L0",
+        )
+
+        assert path.parent.name == "artifacts"
+        assert path.name.startswith("l0-smoke-connectivity-v1-")
+        assert path.suffix == ".json"

@@ -2,6 +2,7 @@ import asyncio
 import json
 import click
 import logging
+from pathlib import Path
 import sys
 
 
@@ -216,6 +217,10 @@ def monitor():
 @click.option("--model", default="", help="Model identifier")
 @click.option("--metadata-timeout", default=8.0, show_default=True, help="Metadata query timeout in seconds")
 @click.option("--execution-timeout", default=8.0, show_default=True, help="Execution query timeout in seconds")
+@click.option("--level", default="L0", show_default=True, help="Benchmark level label for the artifact")
+@click.option("--scenario", default="benchmark-preflight", show_default=True, help="Scenario label for the artifact")
+@click.option("--save", "save_path", default="", help="Write a benchmark artifact JSON file to this path")
+@click.option("--auto-save", is_flag=True, help="Write the artifact to the default docs/unreal-ai-playbook/artifacts location")
 @click.option("--json-output", is_flag=True, help="Print raw JSON instead of a text report")
 def benchmark_preflight(
     instance_id: str | None,
@@ -223,10 +228,20 @@ def benchmark_preflight(
     model: str,
     metadata_timeout: float,
     execution_timeout: float,
+    level: str,
+    scenario: str,
+    save_path: str,
+    auto_save: bool,
     json_output: bool,
 ):
     """Run a lightweight benchmark preflight before heavier Unreal benchmark tasks."""
-    from unrealhub.preflight import format_preflight_report, run_benchmark_preflight
+    from unrealhub.preflight import (
+        build_benchmark_artifact,
+        format_preflight_report,
+        make_default_artifact_path,
+        run_benchmark_preflight,
+        save_benchmark_artifact,
+    )
     from unrealhub.server import get_config, get_state
 
     logging.getLogger("httpx").setLevel(logging.WARNING)
@@ -244,9 +259,23 @@ def benchmark_preflight(
             model=model,
         )
     )
+    artifact = build_benchmark_artifact(report, level=level, scenario=scenario)
+
+    if auto_save and not save_path:
+        save_path = str(
+            make_default_artifact_path(
+                root_dir=str(Path(__file__).resolve().parents[2]),
+                scenario=scenario,
+                level=level,
+            )
+        )
+
+    if save_path:
+        saved = save_benchmark_artifact(artifact, save_path)
+        click.echo(f"Artifact saved: {saved}")
 
     if json_output:
-        click.echo(json.dumps(report, indent=2))
+        click.echo(json.dumps(artifact, indent=2))
     else:
         click.echo(format_preflight_report(report))
 

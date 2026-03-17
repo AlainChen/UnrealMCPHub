@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 from unrealhub.config import ProjectConfig, ProjectEntry
@@ -26,6 +28,14 @@ def _masked_url_label(url: str) -> str:
     if not url:
         return "not available"
     return "reachable loopback endpoint" if "127.0.0.1" in url or "localhost" in url else "reachable endpoint"
+
+
+def _masked_instance_label(instance_key: str) -> str:
+    if not instance_key:
+        return "not identified"
+    if instance_key.startswith("unknown:"):
+        return "active instance (project unresolved)"
+    return "active instance"
 
 
 async def _resolve_instance_url(
@@ -83,10 +93,10 @@ async def run_benchmark_preflight(
         PreflightCheck(
             name="active_instance_identified",
             ok=bool(inst or url),
-            detail=inst.key if inst else "derived from configured project port",
+            detail=_masked_instance_label(inst.key) if inst else "derived from configured project port",
         )
     )
-    summary["instance"] = inst.key if inst else "derived from configured project port"
+    summary["instance"] = _masked_instance_label(inst.key) if inst else "derived from configured project port"
     summary["endpoint"] = _masked_url_label(url)
 
     if not url:
@@ -128,6 +138,50 @@ async def run_benchmark_preflight(
     summary["checks"] = [c.__dict__ for c in checks]
     summary["allow_continue"] = all(c.ok for c in checks)
     return summary
+
+
+def build_benchmark_artifact(
+    report: dict[str, Any],
+    *,
+    level: str = "L0",
+    scenario: str = "benchmark-preflight",
+) -> dict[str, Any]:
+    instance_label = report.get("instance", "")
+    if instance_label.startswith("unknown:"):
+        instance_label = _masked_instance_label(instance_label)
+
+    return {
+        "artifact_type": "benchmark_preflight",
+        "generated_at": datetime.now().isoformat(),
+        "benchmark_level": level,
+        "scenario": scenario,
+        "project": report["project"],
+        "project_path": report["project_path"],
+        "agent": report["agent"],
+        "model": report["model"],
+        "instance": instance_label,
+        "endpoint": report["endpoint"],
+        "checks": report["checks"],
+        "allow_continue": report["allow_continue"],
+    }
+
+
+def save_benchmark_artifact(artifact: dict[str, Any], output_path: str) -> Path:
+    path = Path(output_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(__import__("json").dumps(artifact, indent=2), encoding="utf-8")
+    return path
+
+
+def make_default_artifact_path(
+    *,
+    root_dir: str,
+    scenario: str,
+    level: str,
+) -> Path:
+    safe_scenario = scenario.replace("/", "-").replace("\\", "-").replace(" ", "-")
+    timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    return Path(root_dir) / "docs" / "unreal-ai-playbook" / "artifacts" / f"{level.lower()}-{safe_scenario}-{timestamp}.json"
 
 
 def format_preflight_report(report: dict[str, Any]) -> str:

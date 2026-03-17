@@ -17,6 +17,7 @@ BenchmarkVampire/
 docs.7z
 docs/*.html
 docs/*.pdf
+docs/unreal-ai-playbook/artifacts/
 tools/*
 !tools/run-unrealhub-source.bat
 !tools/run_unrealhub_source.py
