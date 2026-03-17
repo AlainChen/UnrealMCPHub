@@ -115,3 +115,76 @@
 当前最合理的推进方式不是“直接做 Vampire Survivors”，而是：
 
 `preflight -> benchmark-lite -> sandbox -> gameplay loop -> heavy benchmark modules -> final integration`
+
+## Long-Term
+
+在当前这套 Launcher 版本验证链之外，更远期的规划应当单独看待，不和短期 benchmark 收口混在一起。
+
+### 1. 从 Launcher Workflow 走向 Source Engine Workflow
+
+当前验证主要建立在 Launcher 版 Unreal 上，但大型项目里更常见的是：
+
+- 自编译 Unreal Engine
+- 项目级 engine fork
+- 团队维护的 engine patch
+- 更复杂的编译、符号和 crash 分析路径
+
+长期需要补齐的方向包括：
+
+- source-built engine 的识别与配置
+- 多引擎版本与多引擎布局管理
+- 针对源码版引擎的 compile / cook / package 流程
+- 针对源码版引擎的 crash、symbol 与日志分析
+
+### 2. 从二进制资产操作走向中间表示与结构化审查
+
+当前工作流已经能约束 AI 在 Unreal 中做事，但大型项目里还需要一层更可审计的结构：
+
+- 任务意图表示
+- 资产变更摘要
+- 引用关系变化摘要
+- 地图或 gameplay 结构变化摘要
+- 比 Unreal 二进制 diff 更稳定的中间数据结构
+
+长期目标不是让 AI 直接改所有二进制资产，而是先产生结构化意图和变更摘要，再映射到 Unreal 内容。
+
+### 3. 从直接触碰 C++/资产走向 Middleware Gameplay Layer
+
+大型项目里，AI 未必适合长期直接操作：
+
+- 低层 C++
+- 蓝图二进制资产
+- 复杂地图状态
+
+更现实的远期方向可能是：
+
+- C++ 负责底层系统
+- Unreal 资产负责承载与表现
+- 中间脚本层负责高频玩法逻辑
+
+可探索的方向包括：
+
+- AngelScript
+- Lua
+- 项目自定义 DSL
+- 其他适合 gameplay iteration 的脚本层
+
+这样做的价值在于：
+
+- 更容易 diff
+- 更容易 review
+- 更容易回滚
+- 更适合 AI 高频生成和重构
+
+### 4. 工业化采用的真正目标
+
+远期目标不只是“benchmark 能跑通”，而是：
+
+- 多项目可复用
+- 多成员可复制
+- 权限边界清晰
+- 变更审查可执行
+- benchmark 能作为回归门槛
+- 失败可恢复，结果可归档
+
+也就是说，当前 benchmark 验证链是入口，而不是终点。

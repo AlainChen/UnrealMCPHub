@@ -69,6 +69,30 @@ This TODO intentionally starts with workflow and safety, then moves toward stron
 - [ ] Identify missing audit or reporting hooks for binary asset work.
 - [ ] Revisit workflow rules after the first benchmark cycle.
 
+## P8 Productionization Backlog
+
+- [ ] Define a "safe validation path" that prefers cold compile, package verification, and log evidence over long PIE automation scripts.
+- [ ] Add explicit failure categories for benchmark and validation runs, such as connectivity, metadata-only, execution timeout, editor unhealthy, and package failure.
+- [ ] Formalize working modes as `read-only`, `sandbox-prototype`, `restricted-edit`, and `high-trust maintenance`.
+- [ ] Define a standard end-of-task summary that always records assets changed, validation run, remaining risks, and next smallest step.
+- [ ] Add a binary asset audit template for `.uasset` and `.umap` changes.
+- [ ] Add an asset-reference change review template so Unreal changes are not reviewed as raw binaries only.
+- [ ] Record agent/client/model identity in every benchmark artifact to avoid mixing results across different runtimes.
+- [ ] Define which benchmark artifacts are allowed in this repo and which must remain in an external Unreal test project.
+- [ ] Turn benchmark-lite into a repeatable regression gate for future workflow changes.
+- [ ] Plan a lightweight health check or scheduled validation pass for MCP connectivity, tool usability, and package viability.
+
+## P9 Long-Term Platform Direction
+
+- [ ] Plan support for source-built Unreal Engine workflows in addition to Launcher-based validation.
+- [ ] Define how the Hub should detect and manage multiple engine layouts, including project engine forks and team-specific engine roots.
+- [ ] Research crash, symbol, and packaging workflows for source-built engine projects.
+- [ ] Design an intermediate change representation for AI work, so intent and review data can exist before Unreal binary assets are touched.
+- [ ] Explore map, asset, and gameplay change summaries that are more structured than raw Git diffs.
+- [ ] Evaluate whether a middleware gameplay layer would reduce direct AI pressure on binary assets and low-level C++.
+- [ ] Compare candidate middleware layers such as AngelScript, Lua, project-specific DSLs, or other script-facing gameplay runtimes.
+- [ ] Define what "industrialized adoption" means for this workflow in a large project: permissions, auditability, reproducibility, rollback, and multi-user operation.
+
 ## Immediate Next Actions
 
 - [ ] Review [skill-system.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\skill-system.md) with the team.
