@@ -2,6 +2,8 @@ import logging
 
 from mcp.server.fastmcp import FastMCP
 
+from unrealhub.tools.discovery_tools import probe_unreal_mcp_with_fallback
+
 logger = logging.getLogger(__name__)
 
 
@@ -22,7 +24,6 @@ def register_monitor_tools(mcp: FastMCP, get_state, get_watcher) -> None:
             return "No instance found. Run discover_instances() first."
 
         from unrealhub.utils.process import get_process_info, is_process_alive
-        from unrealhub.ue_client import UEMCPClient
 
         lines = [
             f"Instance: {inst.key}",
@@ -42,7 +43,11 @@ def register_monitor_tools(mcp: FastMCP, get_state, get_watcher) -> None:
                 if info:
                     lines.append(f"CPU: {info.get('cpu_percent', '?')}%, Memory: {info.get('memory_mb', '?')} MB")
 
-        http_ok = await UEMCPClient.probe_endpoint(inst.url, timeout=2.0)
-        lines.append(f"HTTP endpoint: {'responding' if http_ok else 'NOT responding'}")
+        probe = await probe_unreal_mcp_with_fallback(inst.url, timeout=2.0)
+        if probe:
+            matched_url, _ = probe
+            lines.append(f"Unreal MCP endpoint: responding via {matched_url}")
+        else:
+            lines.append("Unreal MCP endpoint: NOT responding")
 
         return "\n".join(lines)

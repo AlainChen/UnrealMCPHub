@@ -5,6 +5,8 @@ import logging
 from pathlib import Path
 import sys
 
+from unrealhub.tools.discovery_tools import probe_unreal_mcp_with_fallback
+
 
 @click.group()
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose logging")
@@ -104,15 +106,14 @@ def discover():
     click.echo(f"Scanning ports: {ports}")
 
     async def scan():
-        from unrealhub.tools.discovery_tools import probe_unreal_mcp
-
         results = []
         for port in ports:
             url = f"http://localhost:{port}/mcp"
-            info = await probe_unreal_mcp(url, timeout=2.0)
-            if info:
-                results.append({"port": port, "url": url})
-                click.echo(f"  Found Unreal MCP: port {port}")
+            probe = await probe_unreal_mcp_with_fallback(url, timeout=2.0)
+            if probe:
+                matched_url, _ = probe
+                results.append({"port": port, "url": matched_url})
+                click.echo(f"  Found Unreal MCP: port {port} ({matched_url})")
 
         if not results:
             click.echo("No Unreal MCP instances found.")
