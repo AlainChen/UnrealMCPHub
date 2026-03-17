@@ -68,6 +68,7 @@ Use it to track:
 - [ ] add stable evidence capture helpers for before/after screenshots
 - [ ] add safe Post Process Volume wrappers instead of raw Python property guesses
 - [ ] reduce reliance on long `run_python_script` chains for Gym scenarios
+- [x] document the Hub-only foundation plan before deciding whether to fork `RemoteMCP`
 
 ## Long-Term Direction
 
