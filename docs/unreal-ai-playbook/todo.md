@@ -45,10 +45,11 @@ Use it to track:
 ### Capability Gym
 
 - [x] lock the first two pilot domains for showcase work
-- [ ] rewrite the first two pilot domains around 3D-readable showcase tasks instead of combat-first tasks
-- [ ] write task templates for `lighting/readability` and `space/readability`
+- [x] rewrite the first two pilot domains around 3D-readable showcase tasks instead of combat-first tasks
+- [x] write task templates for `lighting/readability` and `space/readability`
 - [x] define the evidence bundle for every gym task: before/after image, validation note, risk summary, readiness score
 - [ ] start the first live gym instance for `lighting/readability`
+- [ ] decide whether to keep Gym on temporary benchmark maps or split a dedicated `__Gym` asset root
 - [ ] produce the first 图文可行性报告 from two successful gym pilots
 - [ ] decide when stable gym templates should move from docs into `team-unreal-workflow` references
 
