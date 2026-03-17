@@ -3,9 +3,9 @@
 ## 快照信息
 
 - 日期：2026-03-17
-- 项目：`F:\MCPtest\TestMCP\TestMCP.uproject`
+- 项目：本地 UE5 sandbox 测试工程（路径已脱敏）
 - UE 进程：`UnrealEditor` 运行中
-- MCP 端点：`http://127.0.0.1:8422/mcp`
+- MCP 端点：本地 loopback 端点（地址已脱敏）
 - 插件状态：编辑器内 `MCP.State` 先前已确认 `RemoteMCP Running`
 
 ## 本次验证方法

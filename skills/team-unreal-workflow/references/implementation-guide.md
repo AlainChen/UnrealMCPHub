@@ -31,6 +31,7 @@ Checklist:
 - domain metadata query succeeds
 - one execution tool succeeds within timeout
 - project path and sandbox target are confirmed
+- agent/client/model information is recorded for the run
 
 If preflight fails:
 - stop the benchmark
@@ -64,12 +65,18 @@ When validating Unreal MCP capability, classify findings with these states:
   - tool listed but timed out, failed, or has known instability
 
 Record at least:
+- agent name or client surface
+- model identifier when known
 - domain name
 - tool name
 - call attempted
 - result status
 - timeout or error notes
 - environment notes
+
+Expectation:
+- different agents or models may enumerate the same tools but show different latency, tool selection, and recovery behavior
+- compare benchmark results only when the agent setup is also recorded
 
 ## 5. Recommended Execution Order
 
