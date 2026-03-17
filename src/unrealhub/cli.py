@@ -1,4 +1,5 @@
 import asyncio
+import json
 import click
 import logging
 import sys
@@ -207,6 +208,50 @@ def monitor():
     except KeyboardInterrupt:
         watcher.stop()
         click.echo("\nMonitoring stopped.")
+
+
+@main.command("benchmark-preflight")
+@click.option("--instance", "instance_id", default=None, help="Instance key, project name, or port")
+@click.option("--agent", default="", help="Agent or client surface label")
+@click.option("--model", default="", help="Model identifier")
+@click.option("--metadata-timeout", default=8.0, show_default=True, help="Metadata query timeout in seconds")
+@click.option("--execution-timeout", default=8.0, show_default=True, help="Execution query timeout in seconds")
+@click.option("--json-output", is_flag=True, help="Print raw JSON instead of a text report")
+def benchmark_preflight(
+    instance_id: str | None,
+    agent: str,
+    model: str,
+    metadata_timeout: float,
+    execution_timeout: float,
+    json_output: bool,
+):
+    """Run a lightweight benchmark preflight before heavier Unreal benchmark tasks."""
+    from unrealhub.preflight import format_preflight_report, run_benchmark_preflight
+    from unrealhub.server import get_config, get_state
+
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("mcp").setLevel(logging.WARNING)
+    logging.getLogger("unrealhub.ue_client").setLevel(logging.CRITICAL)
+
+    report = asyncio.run(
+        run_benchmark_preflight(
+            config=get_config(),
+            state=get_state(),
+            instance_id=instance_id,
+            metadata_timeout=metadata_timeout,
+            execution_timeout=execution_timeout,
+            agent=agent,
+            model=model,
+        )
+    )
+
+    if json_output:
+        click.echo(json.dumps(report, indent=2))
+    else:
+        click.echo(format_preflight_report(report))
+
+    if not report["allow_continue"]:
+        sys.exit(2)
 
 
 if __name__ == "__main__":
