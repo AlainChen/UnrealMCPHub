@@ -283,5 +283,68 @@ def benchmark_preflight(
         sys.exit(2)
 
 
+@main.command("benchmark-lite")
+@click.option("--level", default="L0", show_default=True, help="Benchmark lite level label")
+@click.option("--scenario", default="smoke-connectivity-v1", show_default=True, help="Benchmark lite scenario label")
+@click.option("--agent", default="", help="Agent or client surface label")
+@click.option("--model", default="", help="Model identifier")
+@click.option("--save", "save_path", default="", help="Write a benchmark lite artifact JSON file to this path")
+@click.option("--auto-save", is_flag=True, help="Write the artifact to the default docs/unreal-ai-playbook/artifacts location")
+@click.option("--json-output", is_flag=True, help="Print raw JSON instead of a text report")
+def benchmark_lite(
+    level: str,
+    scenario: str,
+    agent: str,
+    model: str,
+    save_path: str,
+    auto_save: bool,
+    json_output: bool,
+):
+    """Run a lightweight benchmark-lite pass built on top of benchmark preflight."""
+    from unrealhub.benchmark_lite import (
+        format_benchmark_lite_report,
+        make_benchmark_lite_artifact_path,
+        run_benchmark_lite,
+        save_benchmark_lite_artifact,
+    )
+    from unrealhub.server import get_config, get_state
+
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("mcp").setLevel(logging.WARNING)
+    logging.getLogger("unrealhub.ue_client").setLevel(logging.CRITICAL)
+
+    artifact = asyncio.run(
+        run_benchmark_lite(
+            config=get_config(),
+            state=get_state(),
+            level=level,
+            scenario=scenario,
+            agent=agent,
+            model=model,
+        )
+    )
+
+    if auto_save and not save_path:
+        save_path = str(
+            make_benchmark_lite_artifact_path(
+                root_dir=str(Path(__file__).resolve().parents[2]),
+                scenario=scenario,
+                level=level,
+            )
+        )
+
+    if save_path:
+        saved = save_benchmark_lite_artifact(artifact, save_path)
+        click.echo(f"Artifact saved: {saved}")
+
+    if json_output:
+        click.echo(json.dumps(artifact, indent=2))
+    else:
+        click.echo(format_benchmark_lite_report(artifact))
+
+    if not artifact["ready_for_next_level"]:
+        sys.exit(2)
+
+
 if __name__ == "__main__":
     main()
