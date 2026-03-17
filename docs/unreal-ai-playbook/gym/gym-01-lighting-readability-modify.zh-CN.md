@@ -16,6 +16,21 @@
 - 可见
 - 容易做 before / after
 - 对当前 workflow 友好
+- 全自动
+
+## Baseline Definition
+
+`Gym-01` 是 baseline，不是 advanced lighting showcase。
+
+它应该验证的是：
+- AI 能否通过当前自动化链路完成一次最小 lighting/readability 修改
+- 修改是否足够可见、可复现、可归档
+
+它不应该一开始就承担：
+- 完整天气系统
+- 复杂 post process 组合
+- 重型 day-night cycle 系统
+- 长链路截图、保存、视口控制、效果修改全部混在一次自动化里
 
 ## 推荐载体
 
@@ -39,10 +54,12 @@
 - 新 UI 系统
 - 重资产迁移
 - 对外部插件的依赖
+- advanced weather pipeline
+- 高风险长链路自动化编排
 
 ## Baseline Pass
 
-这一轮 baseline 只做两件事：
+这一轮 baseline 只做两件事，而且都必须保持全自动：
 
 ### Modify A: Time-of-Day Shift
 
@@ -56,7 +73,7 @@
 
 1. 有一组同机位 before / after
 2. 场景 mood 和 focal readability 有明确变化
-3. 没有破坏当前加载和展示稳定性
+3. 修改流程可以通过低风险自动化路径重复执行
 4. 有一条 readiness 结论
 
 ## 最小证据包

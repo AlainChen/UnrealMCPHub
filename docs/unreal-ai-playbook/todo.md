@@ -51,12 +51,23 @@ Use it to track:
 - [x] rewrite the first two pilot domains around 3D-readable showcase tasks instead of combat-first tasks
 - [x] write task templates for `lighting/readability` and `space/readability`
 - [x] define the evidence bundle for every gym task: before/after image, validation note, risk summary, readiness score
+- [x] clarify that `Gym-01` is a baseline, fully automated pass rather than an advanced lighting showcase
+- [x] summarize the first Gym tooling backlog and MCP review findings
 - [ ] complete `Gym-01` `Lighting Readability Modify`
 - [ ] start `Gym-02` `3D Space Readability Modify`
 - [ ] define baseline briefs for `Gym-03` `3D Gameplay Feedback`, `Gym-04` `3D Combat Encounter`, and `Gym-05` `3D Animation / Locomotion`
 - [ ] decide whether to keep Gym on temporary benchmark maps or split a dedicated `__Gym` asset root
 - [ ] produce the first 图文可行性报告 from two successful gym pilots
 - [ ] decide when stable gym templates should move from docs into `team-unreal-workflow` references
+
+### Gym Tooling Backlog
+
+- [ ] add stable map lifecycle tools for blank-map creation, loading, and save-as
+- [ ] add minimal scene/testbed construction tools for Gym maps
+- [ ] add structured lighting rig and preset tools
+- [ ] add stable evidence capture helpers for before/after screenshots
+- [ ] add safe Post Process Volume wrappers instead of raw Python property guesses
+- [ ] reduce reliance on long `run_python_script` chains for Gym scenarios
 
 ## Long-Term Direction
 
