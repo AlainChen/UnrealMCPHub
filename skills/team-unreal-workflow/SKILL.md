@@ -27,6 +27,10 @@ Do not use this skill to modify Hub internals. For Hub source changes, use:
   [rules.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\skills\team-unreal-workflow\references\rules.md)
 - For choosing the right benchmark stage:
   [benchmark-ladder.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\skills\team-unreal-workflow\references\benchmark-ladder.md)
+- For phase-based rollout and next-step planning:
+  [execution-todo.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\skills\team-unreal-workflow\references\execution-todo.md)
+- For low-overhead execution, preflight, branch placement, and runtime validation:
+  [implementation-guide.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\skills\team-unreal-workflow\references\implementation-guide.md)
 - For common task prompts and templates:
   [task-templates.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\skills\team-unreal-workflow\references\task-templates.md)
 - For final review expectations:
