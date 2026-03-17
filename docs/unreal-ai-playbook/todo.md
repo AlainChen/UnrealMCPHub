@@ -19,6 +19,7 @@ Use it to track:
 - [x] `benchmark-lite` implemented
 - [x] `L0`, `L1`, and `L2` ladder stages exercised in the external Unreal sandbox project
 - [x] `vampire-survivors-v1` style benchmark reached a packaged, showcase-ready pass in the external Unreal project
+- [x] `Baseline Track` defined as the current Gym progression path
 
 ## Active TODO
 
@@ -28,6 +29,7 @@ Use it to track:
 - [ ] add a small failure taxonomy for benchmark runs: connectivity, metadata-only, execution timeout, editor unhealthy, package failure
 - [ ] formalize the four operating modes: `read-only`, `sandbox-prototype`, `restricted-edit`, `high-trust maintenance`
 - [ ] standardize the end-of-task summary format across docs and artifacts
+- [ ] improve local tooling ergonomics when Python is not on `PATH`
 
 ### Audit And Review
 
@@ -35,6 +37,7 @@ Use it to track:
 - [ ] add an asset-reference review template so Unreal changes are not reviewed as raw binaries only
 - [ ] require agent/client/model identity in every benchmark artifact
 - [ ] keep the repo/external-project artifact boundary documented and enforced
+- [ ] ensure externally shared docs and reports mask local absolute paths, ports, and machine-specific identifiers
 
 ### Regression And Reproducibility
 
@@ -48,7 +51,9 @@ Use it to track:
 - [x] rewrite the first two pilot domains around 3D-readable showcase tasks instead of combat-first tasks
 - [x] write task templates for `lighting/readability` and `space/readability`
 - [x] define the evidence bundle for every gym task: before/after image, validation note, risk summary, readiness score
-- [ ] start the first live gym instance for `lighting/readability`
+- [ ] complete `Gym-01` `Lighting Readability Modify`
+- [ ] start `Gym-02` `3D Space Readability Modify`
+- [ ] define baseline briefs for `Gym-03` `3D Gameplay Feedback`, `Gym-04` `3D Combat Encounter`, and `Gym-05` `3D Animation / Locomotion`
 - [ ] decide whether to keep Gym on temporary benchmark maps or split a dedicated `__Gym` asset root
 - [ ] produce the first 图文可行性报告 from two successful gym pilots
 - [ ] decide when stable gym templates should move from docs into `team-unreal-workflow` references
