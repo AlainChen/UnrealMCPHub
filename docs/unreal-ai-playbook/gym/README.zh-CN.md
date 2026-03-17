@@ -8,7 +8,10 @@
 - 一组最小验证项
 
 当前实例：
-- [gym-01-combat-modify.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\gym\gym-01-combat-modify.zh-CN.md)
 - [showcase-selection.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\gym\showcase-selection.zh-CN.md)
+- [gym-01-lighting-readability-modify.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\gym\gym-01-lighting-readability-modify.zh-CN.md)
 
 后续如果 `lighting`、`level-design` 等 pilot 进入执行，也按同样结构新增。
+
+归档中的探索版本：
+- [archive/gym-combat-modify-exploration.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\gym\archive\gym-combat-modify-exploration.zh-CN.md)

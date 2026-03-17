@@ -45,12 +45,12 @@ Gym 当前承担 4 个作用：
 
 第一批建议聚焦这 6 个域：
 
-- `combat`
-- `level-design`
-- `lighting`
-- `technical-art`
-- `vfx`
-- `ui-ux`
+- `3d-lighting-readability`
+- `3d-space-readability`
+- `3d-gameplay-feedback`
+- `3d-combat-encounter`
+- `3d-animation-locomotion`
+- `3d-vfx-ta`
 
 ### 二层：任务类型
 
@@ -80,32 +80,15 @@ Gym 当前承担 4 个作用：
 
 ## 第一阶段实施建议
 
-### Gym-01 Combat Modify
+### Gym-01 Lighting Readability Modify
 
 目标：
-- 用已有战斗样本或 benchmark arena，做一次局部战斗修改
-
-推荐任务：
-- 调整敌人组合或节奏
-- 新增一个轻量攻击模式
-- 调整受击反馈
-
-最小证据包：
-- 同机位或同阶段的前后对比图
-- 修改点列表
-- 一段运行或日志证据
-- 风险说明
-- readiness 结论
-
-### Gym-02 Lighting Modify
-
-目标：
-- 在一个现有高质量场景里做一次灯光或 mood 的局部改造
+- 在一个已有 3D 场景中做一次局部灯光和可读性改造
 
 推荐任务：
 - 从白天切到黄昏或夜景
-- 做一次 combat readability pass
-- 做一个小型 cinematic lighting pass
+- 做一次 focal area readability pass
+- 做一个小型 cinematic mood pass
 
 最小证据包：
 - 同机位前后对比图
@@ -114,15 +97,37 @@ Gym 当前承担 4 个作用：
 - 性能或烘焙风险说明
 - readiness 结论
 
-### Gym-03 Level Design Modify
+### Gym-02 3D Space Readability Modify
 
 目标：
-- 在现有场景上做 encounter 或动线层面的局部调整
+- 在现有 3D 场景上做一次小范围空间、动线或 encounter readability 调整
 
-### Gym-04 UI Modify
+推荐任务：
+- 调整玩家视线引导
+- 微调 cover、POI 或动线节点
+- 强化某一段空间的可读性和进入节奏
+
+最小证据包：
+- 同路径或同机位前后对比图
+- 修改点列表
+- 可读性与动线结论
+- 风险说明
+- readiness 结论
+
+### Gym-03 3D Gameplay Feedback Micro Pass
 
 目标：
-- 修改 HUD 或一段 prototype UI，验证 AI 在结构化界面改动中的可控性
+- 在不重做玩法系统的前提下，增强一个局部交互或状态反馈
+
+### Gym-04 3D Combat Encounter Modify
+
+目标：
+- 在已有战斗样本上做一轮局部战斗或敌人节奏 modify
+
+### Gym-05 3D Animation / Locomotion Modify
+
+目标：
+- 在已有 3D 样本上做一次动作、移动或 locomotion 层面的局部改造
 
 ## 图文可行性报告结构
 
@@ -154,11 +159,11 @@ Gym 当前承担 4 个作用：
 
 当前已经锁定第一批 pilot domain：
 
-- `combat`
-- `lighting`
+- `3d-lighting-readability`
+- `3d-space-readability`
 
 下一步默认按这个顺序推进：
 
-1. 先用 `Gym-01 Combat Modify` 形成第一份 showcase 任务和证据包
-2. 再用 `Gym-02 Lighting Modify` 形成第二份 showcase 任务和证据包
+1. 先用 `Gym-01 Lighting Readability Modify` 形成第一份 showcase 任务和证据包
+2. 再用 `Gym-02 3D Space Readability Modify` 形成第二份 showcase 任务和证据包
 3. 最后把两者合并成第一版图文可行性报告
