@@ -53,21 +53,23 @@ Use it to track:
 - [x] define the evidence bundle for every gym task: before/after image, validation note, risk summary, readiness score
 - [x] clarify that `Gym-01` is a baseline, fully automated pass rather than an advanced lighting showcase
 - [x] summarize the first Gym tooling backlog and MCP review findings
+- [x] document `Gym-01` as a full baseline brief with evidence and boundary sections
 - [ ] complete `Gym-01` `Lighting Readability Modify`
 - [ ] start `Gym-02` `3D Space Readability Modify`
 - [ ] define baseline briefs for `Gym-03` `3D Gameplay Feedback`, `Gym-04` `3D Combat Encounter`, and `Gym-05` `3D Animation / Locomotion`
 - [ ] decide whether to keep Gym on temporary benchmark maps or split a dedicated `__Gym` asset root
-- [ ] produce the first 图文可行性报告 from two successful gym pilots
+- [ ] produce the first figure-rich feasibility report from two successful gym pilots
 - [ ] decide when stable gym templates should move from docs into `team-unreal-workflow` references
 
 ### Gym Tooling Backlog
 
-- [ ] add stable map lifecycle tools for blank-map creation, loading, and save-as
-- [ ] add minimal scene/testbed construction tools for Gym maps
-- [ ] add structured lighting rig and preset tools
-- [ ] add stable evidence capture helpers for before/after screenshots
-- [ ] add safe Post Process Volume wrappers instead of raw Python property guesses
-- [ ] reduce reliance on long `run_python_script` chains for Gym scenarios
+- [x] define the Hub-side P0/P1/P2 tooling gap priorities for Gym
+- [ ] P0: add stable map lifecycle tools for blank-map creation, loading, and save-as
+- [ ] P0: add minimal scene/testbed construction tools for Gym maps
+- [ ] P0: add structured lighting rig and preset tools
+- [ ] P0: add stable evidence capture helpers for before/after screenshots
+- [ ] P1: add safe Post Process Volume wrappers instead of raw Python property guesses
+- [ ] P1: reduce reliance on long `run_python_script` chains for Gym scenarios
 - [x] document the Hub-only foundation plan before deciding whether to fork `RemoteMCP`
 
 ## Long-Term Direction
