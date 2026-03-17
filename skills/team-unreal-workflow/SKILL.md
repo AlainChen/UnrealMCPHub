@@ -1,6 +1,6 @@
 ---
 name: team-unreal-workflow
-description: Project-specific wrapper skill for UnrealMCPHub-based game development. Use when working on this fork's Unreal workflow and you need team rules, sandbox boundaries, benchmark ladder selection, task templates, or review checklists on top of use-unrealhub. Trigger for day-to-day project work, controlled prototyping, restricted feature work, benchmark-lite runs, and experiment reporting.
+description: Project-specific wrapper skill for UnrealMCPHub-based game development. Use when working on this fork's Unreal workflow and you need team rules, sandbox boundaries, benchmark ladder selection, task templates, review checklists, or controlled next-step planning on top of use-unrealhub.
 ---
 
 # Team Unreal Workflow
@@ -10,6 +10,19 @@ Use this skill as the project-facing layer on top of:
 
 Do not use this skill to modify Hub internals. For Hub source changes, use:
 - [unrealhub-developer](C:\Users\alain\Documents\Playground\UnrealMCPHub\skills\unrealhub-developer\SKILL.md)
+
+## Role
+
+This skill is the project-level control layer for this fork.
+
+Its job is to turn generic Hub and UE runtime capabilities into a team-usable workflow with:
+- sandbox boundaries
+- validation expectations
+- benchmark ladder selection
+- task and review templates
+- controlled next-step planning
+
+It should not become a dump of historical notes or Hub implementation details.
 
 ## Default Behavior
 
@@ -21,6 +34,8 @@ Do not use this skill to modify Hub internals. For Hub source changes, use:
 
 ## Load These References As Needed
 
+- For the current playbook reading order, including `Current / Snapshot / Archive`:
+  [README.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\README.zh-CN.md)
 - For workflow sequence and task loop:
   [workflow.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\skills\team-unreal-workflow\references\workflow.md)
 - For safety boundaries:
@@ -36,10 +51,23 @@ Do not use this skill to modify Hub internals. For Hub source changes, use:
 - For benchmark completion reporting and artifact boundaries:
   [vampire-survivors-benchmark-pass.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\vampire-survivors-benchmark-pass.zh-CN.md)
   [benchmark-artifact-guidelines.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\benchmark-artifact-guidelines.zh-CN.md)
+- For capability showcase planning and gym structure:
+  [unreal-capability-gym.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\unreal-capability-gym.zh-CN.md)
 - For common task prompts and templates:
   [task-templates.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\skills\team-unreal-workflow\references\task-templates.md)
 - For final review expectations:
   [review-checklist.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\skills\team-unreal-workflow\references\review-checklist.md)
+
+## Capability Gym Placement
+
+`Capability Gym` currently lives in the playbook docs instead of this skill's references.
+
+That is intentional:
+- today it is still a showcase and feasibility framework
+- it benefits from flexible iteration by domain and report format
+- it is not yet a stable day-to-day execution contract
+
+If gym task templates, readiness scoring, and reporting structure stabilize, the execution-facing subset can later move into this skill as first-class references.
 
 ## Operating Modes
 
