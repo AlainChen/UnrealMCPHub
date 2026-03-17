@@ -33,6 +33,9 @@ Do not use this skill to modify Hub internals. For Hub source changes, use:
   [implementation-guide.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\skills\team-unreal-workflow\references\implementation-guide.md)
 - For standardized benchmark outputs:
   [benchmark-artifact-template.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\skills\team-unreal-workflow\references\benchmark-artifact-template.md)
+- For benchmark completion reporting and artifact boundaries:
+  [vampire-survivors-benchmark-pass.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\vampire-survivors-benchmark-pass.zh-CN.md)
+  [benchmark-artifact-guidelines.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\benchmark-artifact-guidelines.zh-CN.md)
 - For common task prompts and templates:
   [task-templates.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\skills\team-unreal-workflow\references\task-templates.md)
 - For final review expectations:
