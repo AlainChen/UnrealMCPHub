@@ -12,6 +12,26 @@ AI Agent ──► UnrealMCPHub ──► UE Editor + RemoteMCP plugin
 > **RemoteMCP** runs **inside** UE Editor and provides 17+ tools across 6 domains (level, blueprint, umg, edgraph, behaviortree, slate).
 > **UnrealMCPHub** runs **outside** UE Editor and can compile, launch, monitor, and proxy — even when UE is not running.
 
+## About This Fork
+
+This fork keeps upstream UnrealMCPHub as the base, but adds a workflow and benchmark experimentation layer around it.
+
+Compared with upstream, this fork currently adds:
+
+- **Team workflow docs** under [`docs/unreal-ai-playbook/`](./docs/unreal-ai-playbook/) for sandbox rules, review flow, benchmark planning, and research notes
+- **A project-facing wrapper skill** under [`skills/team-unreal-workflow/`](./skills/team-unreal-workflow/) that narrows `use-unrealhub` into a safer day-to-day workflow
+- **A benchmark ladder** with lighter scenarios before the heavyweight `vampire-survivors-v1` benchmark
+- **Local experiment helpers** on the `codex/lab` branch for source-run and environment troubleshooting
+
+Suggested branch usage in this fork:
+
+- `main`: stable fork baseline
+- `codex/team-workflow`: workflow, docs, benchmark planning, and team-facing structure
+- `codex/lab`: local experiments, wrappers, and trial-and-error utilities
+- `codex/benchmark`: benchmark-focused iteration branch
+
+In short: upstream is the base product, while this fork is organized as a research and workflow-oriented variant for Unreal AI experimentation.
+
 ## Features
 
 - **Project setup** — Configure `.uproject` once; engine auto-detected from registry
