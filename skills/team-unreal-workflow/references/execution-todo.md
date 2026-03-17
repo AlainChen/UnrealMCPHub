@@ -76,3 +76,52 @@ Do not expand the benchmark scope until:
 - the current phase has a repeatable path
 - failures are categorized
 - the next phase has a named owner and output format
+
+## Bottleneck Hypotheses
+
+Use this section as a research backlog, not as confirmed diagnosis.
+
+### Hypothesis 1: Per-call session setup is too expensive
+
+Signals:
+- metadata queries succeed but repeated execution calls time out
+- each tool call opens a fresh MCP session
+
+Check:
+- compare single-call latency vs short batched validation runs
+
+### Hypothesis 2: Unreal-side execution is blocked on the editor thread
+
+Signals:
+- tool enumeration works
+- calls that touch actors, blueprints, or Slate stall together
+
+Check:
+- compare lightweight metadata calls against one minimal execution call after editor idle
+
+### Hypothesis 3: Slate and world queries are too heavy for the local machine
+
+Signals:
+- `slate_*` and actor-list calls are much slower than simple metadata reads
+- the machine is already under load while UnrealEditor is responsive but busy
+
+Check:
+- avoid broad UI tree traversal and full actor scans in low-overhead mode
+
+### Hypothesis 4: Tool health differs by domain, not just by connection
+
+Signals:
+- some domains enumerate correctly but sample calls remain unvalidated
+- tool naming and actual callable surface drift apart
+
+Check:
+- keep a per-domain validation matrix instead of assuming all listed tools are usable
+
+### Hypothesis 5: Benchmark failures are caused by workflow overhead, not only tool failure
+
+Signals:
+- runs spend time on repeated discovery, repeated context rebuilding, and oversized summaries
+
+Check:
+- reduce preflight to the minimum stable checks
+- keep benchmark artifacts short and structured

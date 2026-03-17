@@ -77,6 +77,7 @@ Record at least:
 Expectation:
 - different agents or models may enumerate the same tools but show different latency, tool selection, and recovery behavior
 - compare benchmark results only when the agent setup is also recorded
+- use the benchmark artifact template to keep outputs comparable across runs
 
 ## 5. Recommended Execution Order
 

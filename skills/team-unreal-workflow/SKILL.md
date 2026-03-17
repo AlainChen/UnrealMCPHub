@@ -31,6 +31,8 @@ Do not use this skill to modify Hub internals. For Hub source changes, use:
   [execution-todo.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\skills\team-unreal-workflow\references\execution-todo.md)
 - For low-overhead execution, preflight, branch placement, and runtime validation:
   [implementation-guide.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\skills\team-unreal-workflow\references\implementation-guide.md)
+- For standardized benchmark outputs:
+  [benchmark-artifact-template.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\skills\team-unreal-workflow\references\benchmark-artifact-template.md)
 - For common task prompts and templates:
   [task-templates.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\skills\team-unreal-workflow\references\task-templates.md)
 - For final review expectations:
