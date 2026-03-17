@@ -12,11 +12,83 @@ AI Agent ──► UnrealMCPHub ──► UE Editor + RemoteMCP plugin
 > **RemoteMCP** runs **inside** UE Editor and provides 17+ tools across 6 domains (level, blueprint, umg, edgraph, behaviortree, slate).
 > **UnrealMCPHub** runs **outside** UE Editor and can compile, launch, monitor, and proxy — even when UE is not running.
 
+## How It Works With UnrealRemoteMCP
+
+`UnrealMCPHub` and `UnrealRemoteMCP` are complementary layers, not competing projects.
+
+- **UnrealRemoteMCP** lives inside Unreal Editor and exposes engine-facing tools.
+- **UnrealMCPHub** lives outside Unreal Editor and manages the development lifecycle around those tools.
+
+In practice, the flow looks like this:
+
+1. The AI client connects to `UnrealMCPHub`.
+2. The Hub configures the Unreal project, installs or verifies the plugin, compiles, and launches the editor when needed.
+3. Once the editor is ready, the Hub forwards UE-facing requests to `UnrealRemoteMCP`.
+4. `UnrealRemoteMCP` executes the actual in-editor work and returns results through the Hub.
+
+This separation is the main reason the Hub is useful in production-like workflows:
+
+- `UnrealRemoteMCP` handles **tool execution inside UE**
+- `UnrealMCPHub` handles **project setup, process management, recovery, discovery, and routing**
+
+In short: `UnrealRemoteMCP` is the in-editor capability layer, while `UnrealMCPHub` is the control plane around it.
+
+## About This Fork
+
+This fork keeps upstream UnrealMCPHub as the base, but adds a workflow and benchmark experimentation layer around it.
+
+Compared with upstream, this fork currently adds:
+
+- **Team workflow docs** under [`docs/unreal-ai-playbook/`](./docs/unreal-ai-playbook/) for sandbox rules, review flow, benchmark planning, and research notes
+- **A project-facing wrapper skill** under [`skills/team-unreal-workflow/`](./skills/team-unreal-workflow/) that narrows `use-unrealhub` into a safer day-to-day workflow
+- **A benchmark ladder** with lighter scenarios before the heavyweight `vampire-survivors-v1` benchmark
+- **Local experiment helpers** on the `codex/lab` branch for source-run and environment troubleshooting
+
+Recommended branch roles in this fork:
+
+- `main`: the stable fork baseline that tracks upstream plus fork-approved documentation and workflow changes
+- `codex/lab`: the active working branch for experiments, benchmark tooling, validation utilities, and local integration work
+- `codex/team-workflow`: the branch that introduced the team workflow and documentation structure; keep it as a historical docs-oriented branch or reuse it only for large workflow-only reorganizations
+- `codex/pr-discovery-fallback`: a small upstream-friendly branch reserved for the discovery fallback fix, so it can stay clean and easy to propose upstream
+
+Optional branch:
+
+- `codex/benchmark`: use only if you want a separate branch dedicated to benchmark scenarios or benchmark-only iteration
+
+In short: upstream is the base product, while this fork is organized as a research and workflow-oriented variant for Unreal AI experimentation.
+
+## Benchmark Status
+
+This fork has now driven a `vampire-survivors-v1` style benchmark through a full validation ladder:
+
+- `L0` connectivity and preflight checks
+- `L1` sandbox authoring and verification
+- `L2` restricted gameplay-loop prototype
+- cold compile validation
+- successful `BuildCookRun`
+- packaged Windows build launch verification
+
+At the benchmark level, the current prototype has already demonstrated:
+
+- enemy spawning
+- auto-attacks and kill counting
+- XP drops and XP pickup flow
+- level-up triggers
+- upgrade application
+- HUD feedback
+- restart-capable survival loop scaffolding
+
+The important boundary is that this repository stores the workflow, benchmark tooling, reports, and sanitized artifacts. The Unreal sample project, gameplay prototype code, maps, packaged builds, and raw local logs stay outside this repo as external benchmark assets.
+
+See the benchmark write-up and artifact boundary notes here:
+
+- [`docs/unreal-ai-playbook/vampire-survivors-benchmark-pass.zh-CN.md`](./docs/unreal-ai-playbook/vampire-survivors-benchmark-pass.zh-CN.md)
+- [`docs/unreal-ai-playbook/benchmark-artifact-guidelines.zh-CN.md`](./docs/unreal-ai-playbook/benchmark-artifact-guidelines.zh-CN.md)
 ## Features
 
-- **Project setup** — Configure `.uproject` once; engine auto-detected from registry
-- **Build & launch** — Compile via UBT, launch editor, wait for MCP readiness
-- **Plugin install** — One-click RemoteMCP installation (local copy or GitHub download)
+- **Project setup** – Configure `.uproject` once; engine auto-detected from registry
+- **Build & launch** – Compile via UBT, launch editor, wait for MCP readiness
+- **Plugin install** – One-click RemoteMCP installation (local copy or GitHub download)
 - **Instance discovery** — Scan ports to find running UE editors
 - **UE tool proxy** — `ue_run_python`, `ue_call`, `ue_list_tools` and domain dispatch
 - **Crash resilience** — Crash detection, report retrieval, restart flow
@@ -108,23 +180,31 @@ uv sync          # or: pip install -e .
 
 ## Quick Start
 
-### For AI Agents (Cursor / Claude / etc.)
+### For AI Clients (Cursor / Claude / Codex app / Codex CLI / etc.)
 
-This is the primary use case. Add UnrealMCPHub as an MCP server in your AI tool, then the agent handles everything through natural language.
+This is the primary use case. Add UnrealMCPHub as an MCP server in any MCP-capable AI client, then let the agent handle the Unreal workflow through natural language.
+
+That includes tools such as:
+
+- Cursor
+- Claude Desktop
+- Codex app
+- Codex CLI
+- other MCP-compatible agent clients
 
 **Step 1: Install & Configure MCP** (see [Quick Install](#quick-install-30-seconds) above)
 
 **HTTP mode** (for shared / remote / multi-client use):
 
 ```bash
-unrealhub serve --http --port 9422
+unrealhub serve --http --port <hub-port>
 ```
 
 ```json
 {
   "mcpServers": {
     "unrealhub": {
-      "url": "http://127.0.0.1:9422/mcp"
+      "url": "http://<hub-host>:<hub-port>/mcp"
     }
   }
 }
@@ -153,10 +233,15 @@ Agent → Hub (compile_project)   # Compiles via UBT, even without UE running
 Agent → Hub (launch_editor)     # Starts UE, waits for MCP readiness
 Agent → Hub (ue_run_python)     # Hub forwards to UE's RemoteMCP
                 ↓
-        UE Editor (port 8422)   # Executes Python, returns result
+        UE Editor (plugin MCP endpoint)   # Executes Python, returns result
 ```
 
 The agent only needs to know about the Hub — it never talks to UE directly.
+
+For Codex surfaces specifically:
+
+- **Codex app** can connect to the Hub as a local MCP server and use the same natural-language workflow as other MCP-enabled desktop clients.
+- **Codex CLI** can also work with this setup when its MCP configuration points at the same Hub server, which makes it useful for scripted or terminal-first Unreal workflows.
 
 ### AI Agent Decision Flow
 
@@ -172,13 +257,13 @@ Is project configured?
 ### For Humans (CLI)
 
 ```bash
-unrealhub setup /path/to/MyProject.uproject   # Configure project
-unrealhub serve                                # Start MCP server (stdio)
-unrealhub serve --http --port 9422             # Start MCP server (HTTP)
-unrealhub status                               # Show instance status
-unrealhub discover                             # Discover running UE instances
-unrealhub compile                              # Build active project
-unrealhub launch                               # Launch editor
+unrealhub setup /path/to/MyProject.uproject    # Configure project
+unrealhub serve                                 # Start MCP server (stdio)
+unrealhub serve --http --port <hub-port>        # Start MCP server (HTTP)
+unrealhub status                                # Show instance status
+unrealhub discover                              # Discover running UE instances
+unrealhub compile                               # Build active project
+unrealhub launch                                # Launch editor
 ```
 
 ## Tool Reference
@@ -232,7 +317,7 @@ unrealhub launch                               # Launch editor
                  │                              │                              │
                  ▼                              │  Streamable HTTP             │
          ┌───────────────┐              ┌──────▼──────────────────────────────▼────────┐
-         │ ~/.unrealhub  │              │  UE Editor + RemoteMCP (port 8422)            │
+          │ ~/.unrealhub  │              │  UE Editor + RemoteMCP (runtime endpoint)      │
          │ config.json   │              │  17+ tools: run_python, get_dispatch, etc.    │
          │ state.json    │              │  6 domains: level, blueprint, umg, edgraph,   │
          └───────────────┘              │             behaviortree, slate               │
