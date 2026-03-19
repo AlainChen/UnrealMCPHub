@@ -44,6 +44,8 @@ Use it to track:
 - [ ] turn benchmark-lite into a repeatable regression gate
 - [ ] add one packaged-build smoke-check example to the playbook
 - [ ] define a lightweight periodic health check for MCP reachability, tool usability, and package viability
+- [ ] reduce reliance on ad-hoc PowerShell MCP clients by defining a stable external runner for gym and benchmark validation
+- [ ] evaluate a typed outer control layer (`Go` first, `TypeScript` as an alternative) for session handling, reconnect, artifact collection, and reusable workflow runners
 
 ### Capability Gym
 
@@ -64,7 +66,9 @@ Use it to track:
 - [x] complete a baseline automated `Gym-02` pass with valid `before/after` evidence on a controlled scene
 - [x] record `Gym-02` baseline findings so later reporting can distinguish validated conclusions from rejected intermediate evidence
 - [x] define a baseline brief for `Gym-03` `3D Gameplay Feedback`
-- [ ] start `Gym-03` `3D Gameplay Feedback`
+- [x] start `Gym-03` `3D Gameplay Feedback`
+- [x] run the first `Gym-03` baseline via the lighter `Actor / Trigger` path before escalating to Blueprint graph edits
+- [x] record `Gym-03` baseline findings so later reporting can distinguish validated conclusions from rejected intermediate evidence
 - [ ] define baseline briefs for `Gym-04` `3D Combat Encounter` and `Gym-05` `3D Animation / Locomotion`
 - [x] make `Blueprint Logic Modify` a recommended validation path inside `Gym-03` `3D Gameplay Feedback`
 - [ ] decide whether to keep Gym on temporary benchmark maps or split a dedicated `__Gym` asset root
@@ -93,6 +97,8 @@ Use it to track:
 - [ ] evaluate whether a middleware gameplay layer would reduce direct AI pressure on binary assets and low-level C++
 - [ ] compare candidate middleware layers such as AngelScript, Lua, project-specific DSLs, or other script-facing runtimes
 - [ ] define what industrialized adoption means for a large project: permissions, auditability, reproducibility, rollback, and multi-user operation
+- [ ] design a durable external MCP client/runtime boundary so Unreal-internal Python, plugin-bundled dependencies, and outer orchestration can evolve independently
+- [ ] define how future agent workflows should consume tool tiering (`risk_tier`, reconnect semantics, validation status) rather than rediscovering tool behavior ad hoc
 
 ## Next Review Trigger
 

@@ -5,144 +5,173 @@
 - `Domain`: `3d-gameplay-feedback`
 - `Task Type`: `modify`
 - `Track`: `Baseline`
-- `Status`: `planned`
+- `Status`: `baseline-started`
 
 ## Goal
 
-鍦ㄤ竴涓交閲忋€佸彲鎺у埗鐨?3D 鍦烘櫙涓婏紝鑷姩瀹屾垚涓€娆℃渶灏忕殑 `gameplay feedback` 淇敼锛屽苟鐣欎笅鍙綊妗ｇ殑 before/after 璇佹嵁銆?
+`Gym-03` 的目标不是直接进入重型 gameplay loop，也不是一上来就做复杂蓝图图结构改造。
 
-`Gym-03` 涓嶆槸瀹屾暣 gameplay loop 閲嶅仛锛屼篃涓嶆槸澶у瀷 systems benchmark銆?
+这一项 baseline 更关注：
+- AI 能否通过结构化工具搭出一个最小交互场景
+- AI 能否在 3D 场景里制造一个清晰、可见、可截图的反馈变化
+- AI 能否把 `trigger -> visible response` 这条链跑成有效证据
 
-瀹冪殑鐩爣鏄獙璇侊細
-- AI 鑳藉惁瀵逛竴涓凡鏈夌殑 3D 浜や簰鎴栬Е鍙戞儏鏅紝鍋氬嚭鏄庣‘鍙鐨勫弽棣?
-- 褰撳墠 workflow 鏄惁鑳芥壙鎺?feedback 绫?modify 浠诲姟
-- 钃濆浘閫昏緫鏄惁鍙互浣滀负杩欎竴鍩熺殑鎺ㄨ崘楠岃瘉璺緞
+换句话说，`Gym-03` 测的是 `interactive readability` 和 `player-facing feedback`，不是完整系统设计。
 
 ## Recommended Scenario
 
-`Gym-03` 鏈€閫傚悎鐨勪笉鏄噸 combat锛岃€屾槸杞婚噺浜や簰涓庡弽棣堟儏鏅€?
+当前推荐的 baseline 场景是一个很轻量的 `Actor / Trigger` 场景：
 
-鎺ㄨ崘 baseline scenario锛?
-- overlap trigger
-- click / interact trigger
-- simple proximity event
-- one-shot state change with visible response
+- 一个受控测试场
+- 一个可见目标
+- 一个简单触发点或近似 trigger 的交互锚点
+- 一段清晰的可视反馈
 
-渚嬪锛?
-- 鐜╁鎴栨憚鍍忔満杩涘叆 trigger 鍖哄煙鍚庯紝瀵硅薄棰滆壊銆佹潗璐ㄦ垨 scale 鍙戠敓鍙樺寲
-- 瑙﹀彂鍚庡嚭鐜颁竴涓畝鍗曟彁绀恒€佺伅鍏夊彉鍖栨垨璺熼殢鍙嶉
-- 瑙﹀彂鍚庝竴涓洰鏍囧彉鎴愨€滆婵€娲绘垨琚壘鍒扳€濈姸鎬?
+推荐的最小反馈可以是：
+- `visibility toggle`
+- `scale punch`
+- `color / material swap`
+- `supporting point light turn-on`
+- `supporting prop spawn`
 
 ## Recommended Implementation Path
 
-褰撳墠鎺ㄨ崘涓ょ baseline 璺緞锛?
+### Path A: Actor / Trigger First
 
-### Path A: Actor / Scene Feedback
+第一条 baseline 路线优先走 `Actor / Trigger`。
 
-鐩存帴鍩轰簬宸叉湁 Actor 鍜屽満鏅伐鍏峰仛鍙嶉淇敼锛?
-- transform
-- visibility
-- light
-- supporting prop response
+原因：
+- 更轻
+- 更容易拿到有效 `before/after`
+- 更容易判断问题是在 feedback 本身，还是在更重的 Blueprint graph 操作
 
-杩欐潯璺緞鏇撮€傚悎鍏堣窇閫氭渶灏?feedback chain銆?
+这条路径适合先验证：
+- 场景 reset
+- 目标 actor 改变
+- supporting light 或 prop 的出现
+- capture camera 证据链
 
-### Path B: Blueprint Logic Modify
+### Path B: Blueprint Logic Follow-Up
 
-钃濆浘閫昏緫淇敼搴斾綔涓?`Gym-03` 鐨勬帹鑽愰獙璇佽矾寰勶紝鑰屼笉鏄崟鐙殑 Gym 缂栧彿銆?
+Blueprint 能力是 `Gym-03` 很自然的 follow-up path，但不建议作为第一步。
 
-鎺ㄨ崘鐢ㄤ簬锛?
+更合理的顺序是：
+1. 先把 `Actor / Trigger` baseline 跑通
+2. 再把 Blueprint 作为推荐验证路径加入
+
+适合 Blueprint 的 follow-up 内容包括：
 - overlap event
 - simple trigger logic
 - timer-driven feedback
 - Widget / prompt glue logic
 
-杩欒兘鏇村ソ鍦伴獙璇侊細
-- AI 鏄惁鐪熸鐞嗚В Unreal 钃濆浘鐨勫眬閮ㄤ慨鏀?
-- AI 鏄惁鑳藉湪涓嶅ぇ骞呴噸鏋勯€昏緫鐨勬儏鍐典笅鍋氬嚭鏈夋剰涔夌殑鍙嶉鏀瑰姩
+## First Baseline Path
+
+当前第一轮 baseline 已选择 `Actor / Trigger` 路线。
+
+第一轮的目标是：
+- 保持场景和工具链尽量简单
+- 只做一次清晰的反馈修改
+- 重点验证自动化能力，而不是追求复杂玩法
+
+推荐结构：
+- 一个 `Gym03_TriggerMarker`
+- 一个 `Gym03_Target`
+- 一个 `Gym03_FeedbackLight`
+- 一个 `Gym03_FeedbackPillar`
+
+然后通过结构化工具完成：
+- `before`：中性状态
+- `after`：目标放大或移动，同时补一个 supporting light / pillar
 
 ## Scope
 
-鍏佽淇敼锛?
-- overlap / trigger 鍙嶉
-- 鐗╀欢棰滆壊銆佹潗璐ㄣ€乻cale銆乿isibility 鍙樺寲
-- 灏忚寖鍥村睍绀虹伅鍏夋垨 UI 鎻愮ず
-- 灏戦噺 Blueprint event / component / variable 淇敼
+允许修改：
+- trigger 或 trigger-like actor
+- visible target 的 transform / visibility / supporting response
+- supporting point light
+- supporting prop
+- 局部 readability 支撑变化
 
-鏈疆涓嶅仛锛?
-- 澶у瀷 combat loop
-- 澶嶆潅 AI 行为
-- 閲嶅瀷 animation state machine
-- 澶ц寖鍥?UI 閲嶆瀯
+当前不做：
+- 完整 combat loop
+- 重型 AI 行为
+- 复杂 animation state machine
+- 大型 UI 流程
+- 大范围 Blueprint graph reconstruction
 
 ## Relationship To Earlier Gyms
 
-- `Gym-01` 鍋忓悜锛?focal readability and lighting
-- `Gym-02` 鍋忓悜锛?spatial readability and local hierarchy
-- `Gym-03` 鍋忓悜锛?interactive readability and player-facing response
+- `Gym-01`
+  重点是 lighting readability 和 evidence baseline
+- `Gym-02`
+  重点是 space readability 和局部空间组织
+- `Gym-03`
+  重点是 interactive readability 和 player-facing response
 
-鎹㈠彞璇濊锛?
-`Gym-03` 鎶?鈥滆兘鐪嬫噦鈥濇洿杩戜竴姝ュ彉鎴?鈥滆兘鎰熷彈鍒扳€濄€?
+所以 `Gym-03` 是从“空间和光照可读性”继续走向“交互反馈可读性”的桥。
 
 ## Recommended Tool Path
 
-浼樺厛渚濊禆宸茬粡鍦?`RemoteMCP` 渚ч獙璇佽繃鐨勮兘鍔涳細
+`Gym-03` 当前优先依赖已经验证过的结构化能力：
 
-- scene/testbed construction
-- evidence capture
-- health / reconnect baseline
-- lighting baseline for readability support
+- `RemoteMCP P0` scene/testbed construction
+- `RemoteMCP P0` evidence capture
+- `RemoteMCP P0` health / reconnect baseline
+- `RemoteMCP P1` lighting baseline 支撑
 
-褰撳墠濡傛灉瑕佽蛋 Blueprint validation锛岄渶瑕侀噸鐢ㄧ幇鏈夌殑 blueprint domain 能力锛屼絾 baseline 涓嶅簲璁捐鎴愰噸鍨?blueprint graph reconstruction銆?
+不建议第一轮就退回长 `run_python_script`。
 
 ## Baseline Pass
 
-鏈疆 baseline 榛樿鍙仛涓や釜鍔ㄤ綔锛?
-
 ### Modify A: Trigger Feedback Pass
 
-涓€涓?trigger / overlap / proximity 鏉′欢鍙戠敓鍚庯紝鐢熸垚涓€涓槑鏄剧殑鍙嶉銆?
+用一个最小 trigger-like 场景，验证：
+- target 是否发生清晰变化
+- 变化是否能通过固定相机稳定拍到
 
 ### Modify B: Readability Support Pass
 
-涓哄弽棣堝鍔犱竴鐐逛紶杈惧姏锛屼緥濡傦細
-- supporting light
-- scale punch
-- simple prompt
-- one-shot highlight
+在反馈发生后，用 supporting light 或 supporting prop 增强可见性，确保变化不只是逻辑存在，而是视觉证据也成立。
 
 ## Evidence Bundle
 
-鏈€灏忚瘉鎹寘鍥哄畾涓猴細
+每次 `Gym-03` baseline 至少保留：
 
 - task brief
-- before image
-- after image or paired state image
+- `before` image
+- `after` image
 - execution summary
 - interaction / feedback note
 - risk note
 - readiness conclusion
 
-濡傛灉鍚敤浜?Blueprint path锛岃瘉鎹腑杩樺簲琛ュ厖锛?
+如果后续进入 Blueprint path，再额外补：
 - modified blueprint name
-- modified event or logic area
+- modified event / logic area
 - whether the change remained local or expanded beyond baseline scope
 
 ## Success Criteria
 
-鏈疆瀹屾垚鐨勬渶浣庢爣鍑嗭細
+`Gym-03` baseline 通过的标准是：
 
-1. 鏈変竴涓槑纭殑 trigger / feedback 鎯呮櫙
-2. 鏈変竴缁勫彲瑙嗗寲鍓嶅悗瀵规瘮
-3. feedback 鏈夋竻鏅扮殑鐜╁鎰熺煡浠峰€?
-4. 濡傛灉浣跨敤 Blueprint path锛屼慨鏀归渶淇濇寔灞€閮ㄣ€佸彲瑙ｉ噴銆佸彲鍥炴斁
+1. 有一个清晰的 `trigger / feedback` 场景
+2. 有一组有效的 `before/after`
+3. `after` 能体现真实可见的反馈变化
+4. 工具链以结构化 MCP 工具为主，而不是长 Python 脚本
+
+## Current Reading
+
+当前对 `Gym-03` 的理解应写成：
+
+- baseline 已启动
+- 第一轮选择的是更轻的 `Actor / Trigger` 路径
+- Blueprint 是推荐 follow-up path，而不是第一步阻塞项
 
 ## Hand-Off
 
-瀹屾垚鍚庡簲鍥炲～锛?
+后续如果继续推进，优先顺序是：
 
-- 缁撴灉鎽樿
-- 璇佹嵁鏂囦欢鍚?
-- 椋庨櫓缁撹
-- 鏄惁鏇撮€傚悎缁х画鐢?Actor path 杩樻槸 Blueprint path
-- 鏄惁鍑嗗杩涘叆 `Gym-04`
+1. 先收束第一轮 `Actor / Trigger` findings
+2. 再决定是否把 Blueprint path 拉进第二轮验证
+3. 如果第一轮证据稳定，再把它写进更正式的图文可用性报告
