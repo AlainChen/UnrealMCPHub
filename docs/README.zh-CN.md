@@ -2,32 +2,30 @@
 
 ## Purpose
 
-这个目录用于承载两类内容：
+这个目录用于承载当前仓库的文档入口。
 
-- 仓库和生态的说明性分析
-- `unreal-ai-playbook` 相关的工作流、Gym、benchmark 和能力评估文档
+当前默认主入口是：
+
+- [unreal-ai-playbook/README.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\README.zh-CN.md)
 
 ## Recommended Reading Order
 
-当前默认入口直接是：
-- [unreal-ai-playbook/README.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\README.zh-CN.md)
+建议按下面顺序阅读：
 
-再按里面的 `Current -> Snapshot -> Archive` 顺序阅读。
-
-## Directory Guide
-
-- `unreal-ai-playbook/`
-  当前最重要的工作流、Gym、benchmark、TODO 和报告入口
+1. `unreal-ai-playbook/README.zh-CN.md`
+2. 其中的 `Current`
+3. 如有需要，再进入 `Snapshot`
+4. 最后才进入 `Archive`
 
 ## Maintenance Rule
 
-如果后续再增加文档，建议优先判断它属于哪一类：
+后续新增文档时，优先判断它属于哪一类：
 
 - `Current`
-  当前仍然会指导实际工作
+  当前仍然直接指导工作
 - `Snapshot`
-  某一阶段的状态留档
+  某一阶段状态留档
 - `Archive`
-  已经被吸收的过程稿或中间稿
+  已经退出主阅读路径的过程稿或中间版本
 
-不要再让 `docs/` 根目录堆积新的中间过程文档。默认都应先判断是否应该进入 `unreal-ai-playbook/` 的 `Current / Snapshot / Archive` 结构。
+默认不要再把新的过程稿直接堆在 `docs/` 根目录。

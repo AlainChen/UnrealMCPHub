@@ -1,16 +1,18 @@
 # Archive
 
-这个目录用于保存早期过程稿、研究稿和已被后续文档吸收的中间版本。
+这个目录用于保存：
+
+- 早期过程稿
+- 已被吸收的中间版本
+- 不再作为当前主阅读路径的探索性材料
 
 特点：
-- 可以帮助回看思路演进
-- 不应继续作为当前工作入口
 
-适合放在这里的内容：
-- 早期 benchmark 研究稿
-- 旧的分支策略过程稿
-- 已经被 README / todo / gym findings 吸收的体系说明
+- 有历史价值
+- 不应继续作为默认入口
 
-使用建议：
-- 默认不要从这里开始阅读
-- 只有在需要回看历史推导过程时再进入
+如果你只是想了解当前仓库状态，请优先返回：
+
+- [..\README.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\README.zh-CN.md)
+- [..\current-status-summary.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\current-status-summary.zh-CN.md)
+- [..\todo.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\todo.md)

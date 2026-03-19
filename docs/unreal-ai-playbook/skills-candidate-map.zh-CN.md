@@ -1,101 +1,86 @@
-# Skills Candidate Map
+# Reference And Skill Candidates
 
 ## Purpose
 
-本文档用于回答：
-- 哪些内容已经足够稳定，适合进一步沉淀成 skills 或 references
-- 哪些内容还处在 Gym / feasibility 阶段，暂时不适合过早 skillize
+本文档回答两个问题：
 
-## Skill Candidates
+- 哪些内容已经足够稳定，适合沉淀成 reference 或 skill
+- 哪些内容仍然更适合留在归档或后续专门 workspace 中继续演化
 
-### 1. Gym Baseline Workflow
+## Recommended Reference Candidates
 
-适合沉淀位置：
+### 1. RemoteMCP Safe Usage
+
+建议沉淀位置：
 - `team-unreal-workflow/references/`
 
-原因：
-- 已经跨 `Gym-01` 到 `Gym-04` 反复验证
-- 核心步骤稳定：
-  - controlled scene
-  - fixed camera
-  - before/after
-  - execution summary
-  - risk / readiness
+理由：
+- `RemoteMCP P0/P0.5` 的 `risk_tier`、`session-disrupting`、`reconnect_required` 等语义已经比较稳定
+- 这部分已经足够指导人机协作和 agent workflow
 
-### 2. Evidence Capture Rules
+### 2. Evidence Capture Discipline
 
-适合沉淀位置：
+建议沉淀位置：
 - `team-unreal-workflow/references/`
 
-原因：
-- camera-anchored capture
-- viewport refresh
-- one-editor-instance discipline
-- evidence validity vs tool success
+理由：
+- “tool success 不等于 evidence 有效”已经被多轮验证
+- 固定机位、受控场景、单 editor 实例这些规则已经足够稳定
 
-这些已经是横跨多个 Gym 的共性规则。
+### 3. Benchmark Validation Discipline
 
-### 3. RemoteMCP Safe Usage Guide
-
-适合沉淀位置：
+建议沉淀位置：
 - `team-unreal-workflow/references/`
 
-原因：
-- `RemoteMCP P0/P0.5` 的 session / reconnect / risk_tier 语义已经比较稳定
-- 已经足够指导 agent 和人类协作流程
+理由：
+- `benchmark-preflight`
+- `benchmark-lite`
+- packaged showcase-ready pass
 
-### 4. Gameplay Feedback Baseline Pattern
+这些已经构成了一套可复用的 benchmark 收口方法。
 
-适合沉淀位置：
+### 4. External Runner Design Notes
+
+建议沉淀位置：
 - `team-unreal-workflow/references/`
 
-原因：
-- `Gym-03` 已证明 `Actor / Trigger` 路线是可复用的 baseline 模板
-- Blueprint follow-up 的定位也已明确
+理由：
+- 目前已经明确 PowerShell client 只是临时壳
+- 后续外部 runner、typed client、Go/TypeScript 外层控制层都有明确方向
 
-### 5. Encounter Readability Baseline Pattern
+## Recommended Skill Candidates
 
-适合沉淀位置：
-- `team-unreal-workflow/references/`
+当前最适合逐步转成 skill 或 skill reference 的有：
 
-原因：
-- `Gym-04` 已证明 static encounter proxy 路线成立
-- 这条路线可作为以后 combat-facing showcase 的稳定第一步
+- `RemoteMCP safe usage`
+- `Evidence capture discipline`
+- `Benchmark validation discipline`
 
-## Not Yet Ready For Skillization
+这些内容的特点是：
 
-### Gym-05 Animation / Locomotion
+- 已经跨多次验证复用
+- 不是一次性的实验结论
+- 与具体某一个 Gym 实例解耦
 
-当前状态：
-- `brief-ready`
-- `boundary-known`
-- `not yet passed`
+## Not Ready Yet
 
-原因：
-- 还缺标准角色资产或更合适的 sample 工程
-- 现在过早 skillize 会把“缺 showcase 载体”的问题隐藏掉
+以下内容当前不建议直接 skillize：
 
-### Figure-Rich Feasibility Report
+- figure-rich 报告本身
+- 过程性的 Gym brief / findings
+- animation / locomotion showcase 路线
+- 更重的 Blueprint / dynamic combat / animation graph 路线
 
-原因：
-- 当前已经有第一版正式报告框架
-- 但还在继续积累更适合正式引用的图和证据
+原因是这些内容仍然依赖：
 
-### Heavy Blueprint / Dynamic Combat / Animation Graph Work
+- 特定 showcase 载体
+- 特定 agent 路径
+- 尚未稳定的展示资产或工程环境
 
-原因：
-- 这些还没有形成稳定 baseline
-- 当前更适合作为 follow-up tracks，而不是默认 skill 入口
+## Practical Rule
 
-## Recommended Order
+如果一项内容同时满足下面三条，就可以考虑进入 reference 或 skill：
 
-建议后续按这个顺序逐步下沉：
-
-1. `Gym baseline workflow`
-2. `Evidence capture discipline`
-3. `RemoteMCP safe usage`
-4. `Gameplay feedback baseline pattern`
-5. `Encounter readability baseline pattern`
-
-等 `Gym-05` 有正式 baseline 后，再考虑：
-- `Animation / locomotion baseline pattern`
+1. 已跨多次验证重复出现
+2. 不依赖某个单一 showcase 场景
+3. 对未来 workflow 有直接指导意义
