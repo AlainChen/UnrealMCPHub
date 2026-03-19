@@ -57,6 +57,11 @@ Typical tools:
 - `ue_status`
 - `ue_list_domains`
 
+When the task depends on newer editor-side structured tools, also confirm:
+- whether the active `RemoteMCP` build already includes the required P0/P0.5 baseline
+- whether the task would trigger a `session-disrupting` tool such as map lifecycle operations
+- whether the client is prepared to reconnect after those operations
+
 ### 3. Confirm Sandbox And Scope
 
 Before any write action, define:
@@ -90,6 +95,19 @@ Use:
 - `build_project`
 - `launch_editor`
 
+Preferred tool order:
+1. use structured editor-side tools first
+2. use `ue_call_dispatch` / `ue_call` next
+3. use `ue_run_python` only when there is no stable structured tool path yet
+
+For Gym baseline work, prefer the validated editor-side foundation when available:
+- map lifecycle
+- scene/testbed construction
+- evidence capture
+- health/reconnect checks
+
+Treat long chained Python editor scripts as a fallback, not the default path.
+
 ### 6. Run Validation
 
 After each task, validate at the smallest useful level:
@@ -99,6 +117,17 @@ After each task, validate at the smallest useful level:
 - relevant logs
 - asset existence
 - changed references if applicable
+
+For Gym tasks, the minimum validation set is:
+- one matching before/after pair
+- one execution summary
+- one risk note
+- one readiness conclusion
+
+If the task used a `session-disrupting` map operation, reconnect first and then re-check:
+- `ping`
+- `get_editor_state`
+- `get_current_level`
 
 ### 7. Summarize Changes And Risks
 
@@ -119,6 +148,16 @@ Required for:
 - C++ module changes
 
 ## Suggested Working Modes
+
+The current workflow should support five AI usage modes:
+
+1. `advisory / read-only`
+2. `sandbox prototyping`
+3. `restricted co-building`
+4. `workflow-node automation`
+5. `high-trust maintenance`
+
+The default day-to-day modes are the first four. The fifth should remain rare and explicit.
 
 ### Read-Only Mode
 

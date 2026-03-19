@@ -57,6 +57,7 @@ Use it to track:
 - [x] validate a `RemoteMCP` P0 baseline for map lifecycle, scene/testbed construction, evidence capture, and health/reconnect semantics
 - [x] validate a `RemoteMCP` P0.5 baseline for `map_unsaved`, `map_not_found`, and `map_already_exists`
 - [ ] complete `Gym-01` `Lighting Readability Modify`
+- [x] define a baseline brief for `Gym-02` `3D Space Readability Modify`
 - [ ] start `Gym-02` `3D Space Readability Modify`
 - [ ] define baseline briefs for `Gym-03` `3D Gameplay Feedback`, `Gym-04` `3D Combat Encounter`, and `Gym-05` `3D Animation / Locomotion`
 - [ ] decide whether to keep Gym on temporary benchmark maps or split a dedicated `__Gym` asset root
