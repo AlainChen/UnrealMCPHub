@@ -14,24 +14,22 @@
 1. [workflow.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\workflow.md)
 2. [rules.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\rules.md)
 3. [todo.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\todo.md)
-4. [vampire-survivors-benchmark-pass.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\vampire-survivors-benchmark-pass.zh-CN.md)
-5. [benchmark-artifact-guidelines.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\benchmark-artifact-guidelines.zh-CN.md)
-6. [benchmark-artifact-template.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\benchmark-artifact-template.zh-CN.md)
-7. [unreal-capability-gym.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\unreal-capability-gym.zh-CN.md)
+4. [unreal-capability-gym.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\unreal-capability-gym.zh-CN.md)
    当前 Gym 的默认推进路线是 `Baseline Track`
-8. [vampire-survivors-roadmap.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\vampire-survivors-roadmap.zh-CN.md)
-9. [gym/README.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\gym\README.zh-CN.md)
+5. [gym/README.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\gym\README.zh-CN.md)
    当前已经启动的 Gym 实例
+6. [gym-feasibility-report.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\gym-feasibility-report.zh-CN.md)
+   当前 Gym 的完整总结性报告
 
 如果你的目标是继续改 `RemoteMCP` 或理解 Gym 自动化边界，建议在读完上面的 `Current` 后，再补读：
-- [remote-mcp-generic-roadmap.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\remote-mcp-generic-roadmap.md)
 - [gym/hub-vs-remotemcp-boundary.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\gym\hub-vs-remotemcp-boundary.zh-CN.md)
 - [gym/gym-tooling-backlog.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\gym\gym-tooling-backlog.zh-CN.md)
+- [gym/gym-status-summary.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\gym\gym-status-summary.zh-CN.md)
 
 ## Snapshot
 
-- [runtime-validation-matrix.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\runtime-validation-matrix.zh-CN.md)
-- [fork-status-summary.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\fork-status-summary.zh-CN.md)
+- [snapshot/README.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\snapshot\README.zh-CN.md)
+- [snapshot/fork-status-summary.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\snapshot\fork-status-summary.zh-CN.md)
 
 如果 Snapshot 与当前状态冲突，应以当前 `README`、`todo` 和实际仓库状态为准。
 
@@ -52,13 +50,11 @@
 
 `archive/` 保存的是早期过程稿和中间版本。
 
-建议按这个顺序回看：
-1. [archive/benchmark-research-report.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\archive\benchmark-research-report.zh-CN.md)
-2. [archive/benchmark-lite-plan.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\archive\benchmark-lite-plan.zh-CN.md)
-3. [archive/benchmark-matrix.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\archive\benchmark-matrix.zh-CN.md)
-4. [archive/change-buckets-and-branching.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\archive\change-buckets-and-branching.zh-CN.md)
-5. [archive/skill-architecture-v2.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\archive\skill-architecture-v2.zh-CN.md)
-6. [archive/skill-system.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\archive\skill-system.md)
+当前已归档：
+- [archive/README.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\archive\README.zh-CN.md)
+- [archive/benchmark-research-report.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\archive\benchmark-research-report.zh-CN.md)
+- [archive/change-buckets-and-branching.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\archive\change-buckets-and-branching.zh-CN.md)
+- [archive/skill-system.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\archive\skill-system.md)
 
 ## Team Workflow 与 Capability Gym
 
