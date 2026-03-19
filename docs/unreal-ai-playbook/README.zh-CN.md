@@ -23,12 +23,30 @@
 9. [gym/README.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\gym\README.zh-CN.md)
    当前已经启动的 Gym 实例
 
+如果你的目标是继续改 `RemoteMCP` 或理解 Gym 自动化边界，建议在读完上面的 `Current` 后，再补读：
+- [remote-mcp-generic-roadmap.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\remote-mcp-generic-roadmap.md)
+- [gym/hub-vs-remotemcp-boundary.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\gym\hub-vs-remotemcp-boundary.zh-CN.md)
+- [gym/gym-tooling-backlog.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\gym\gym-tooling-backlog.zh-CN.md)
+
 ## Snapshot
 
 - [runtime-validation-matrix.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\runtime-validation-matrix.zh-CN.md)
 - [fork-status-summary.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\fork-status-summary.zh-CN.md)
 
 如果 Snapshot 与当前状态冲突，应以当前 `README`、`todo` 和实际仓库状态为准。
+
+## Artifacts
+
+`artifacts/` 目录是本地运行证据和阶段性输出，不是主阅读路径的一部分。
+
+阅读建议：
+- 先读 `Current`
+- 再按需进入 `gym/`
+- 只有在需要核对运行截图、JSON 结果或边界测试证据时，再看 `artifacts/`
+
+如果要对外分享：
+- 先确认路径、端口、机器标识都已脱敏
+- 不把本地临时截图和调试 JSON 当成长期文档入口
 
 ## Archive
 
