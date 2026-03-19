@@ -5,7 +5,21 @@
 - `Domain`: `3d-lighting-readability`
 - `Task Type`: `modify`
 - `Track`: `Baseline`
-- `Status`: `in-progress`
+- `Status`: `baseline-ready`
+
+## Current State
+
+- `camera-anchored capture` is now working and can capture the controlled scene reliably
+- the baseline path is now sufficient to support the next Gym items
+- the only remaining improvement is showcase quality: the current `neutral_day -> golden_hour` difference is not yet visually strong enough to count as an ideal hero before/after pair
+- `Gym-01` should currently be treated as:
+  - `lighting tool capability`: validated
+  - `camera-anchored capture path`: validated
+  - `baseline infrastructure`: validated
+  - `showcase-quality evidence`: optional follow-up improvement
+
+See also:
+- `gym-01-baseline-findings.zh-CN.md` for the recorded findings, rejected evidence, and reporting guidance
 
 ## Goal
 

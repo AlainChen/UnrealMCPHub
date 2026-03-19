@@ -5,7 +5,27 @@
 - `Domain`: `3d-space-readability`
 - `Task Type`: `modify`
 - `Track`: `Baseline`
-- `Status`: `planned`
+- `Status`: `baseline-ready`
+
+## Current State
+
+- `Gym-02` now has a valid automated baseline pass on a controlled scene
+- `before/after` images are no longer identical and reflect an actual space-readability change
+- the validated path uses:
+  - controlled scene construction
+  - fixed capture camera
+  - neutral lighting preset
+  - actor transform changes for space hierarchy
+- the current result is good enough to count as a baseline Gym validation
+- remaining improvement is optional showcase polish rather than baseline viability
+
+## Recorded Evidence
+
+- `gym02-baseline-before-v4.png`
+- `gym02-baseline-after-v4.png`
+
+See also:
+- `gym-02-baseline-findings.zh-CN.md` for the recorded findings, rejected evidence, and reporting guidance
 
 ## Goal
 

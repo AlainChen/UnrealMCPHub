@@ -56,10 +56,17 @@ Use it to track:
 - [x] document `Gym-01` as a full baseline brief with evidence and boundary sections
 - [x] validate a `RemoteMCP` P0 baseline for map lifecycle, scene/testbed construction, evidence capture, and health/reconnect semantics
 - [x] validate a `RemoteMCP` P0.5 baseline for `map_unsaved`, `map_not_found`, and `map_already_exists`
-- [ ] complete `Gym-01` `Lighting Readability Modify`
+- [x] complete the baseline infrastructure pass for `Gym-01` `Lighting Readability Modify`
+- [x] record `Gym-01` baseline findings so later usability reporting can distinguish validated conclusions from rejected evidence
+- [ ] optionally improve `Gym-01` into a stronger showcase-quality before/after pair
 - [x] define a baseline brief for `Gym-02` `3D Space Readability Modify`
-- [ ] start `Gym-02` `3D Space Readability Modify`
-- [ ] define baseline briefs for `Gym-03` `3D Gameplay Feedback`, `Gym-04` `3D Combat Encounter`, and `Gym-05` `3D Animation / Locomotion`
+- [x] start `Gym-02` `3D Space Readability Modify`
+- [x] complete a baseline automated `Gym-02` pass with valid `before/after` evidence on a controlled scene
+- [x] record `Gym-02` baseline findings so later reporting can distinguish validated conclusions from rejected intermediate evidence
+- [x] define a baseline brief for `Gym-03` `3D Gameplay Feedback`
+- [ ] start `Gym-03` `3D Gameplay Feedback`
+- [ ] define baseline briefs for `Gym-04` `3D Combat Encounter` and `Gym-05` `3D Animation / Locomotion`
+- [x] make `Blueprint Logic Modify` a recommended validation path inside `Gym-03` `3D Gameplay Feedback`
 - [ ] decide whether to keep Gym on temporary benchmark maps or split a dedicated `__Gym` asset root
 - [ ] produce the first figure-rich feasibility report from two successful gym pilots
 - [ ] decide when stable gym templates should move from docs into `team-unreal-workflow` references
