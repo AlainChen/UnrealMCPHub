@@ -69,7 +69,11 @@ Use it to track:
 - [x] start `Gym-03` `3D Gameplay Feedback`
 - [x] run the first `Gym-03` baseline via the lighter `Actor / Trigger` path before escalating to Blueprint graph edits
 - [x] record `Gym-03` baseline findings so later reporting can distinguish validated conclusions from rejected intermediate evidence
-- [ ] define baseline briefs for `Gym-04` `3D Combat Encounter` and `Gym-05` `3D Animation / Locomotion`
+- [x] define a baseline brief for `Gym-04` `3D Combat Encounter`
+- [x] start `Gym-04` `3D Combat Encounter`
+- [x] complete a first baseline automated `Gym-04` pass with valid `before/after` evidence on a controlled scene
+- [x] record `Gym-04` baseline findings so later reporting can distinguish validated conclusions from rejected intermediate evidence
+- [ ] define a baseline brief for `Gym-05` `3D Animation / Locomotion`
 - [x] make `Blueprint Logic Modify` a recommended validation path inside `Gym-03` `3D Gameplay Feedback`
 - [ ] decide whether to keep Gym on temporary benchmark maps or split a dedicated `__Gym` asset root
 - [ ] produce the first figure-rich feasibility report from two successful gym pilots

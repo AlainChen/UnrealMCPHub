@@ -30,6 +30,8 @@
 - [gym-02-baseline-findings.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\gym\gym-02-baseline-findings.zh-CN.md)
 - [gym-03-gameplay-feedback-modify.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\gym\gym-03-gameplay-feedback-modify.zh-CN.md)
 - [gym-03-baseline-findings.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\gym\gym-03-baseline-findings.zh-CN.md)
+- [gym-04-combat-encounter-modify.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\gym\gym-04-combat-encounter-modify.zh-CN.md)
+- [gym-04-baseline-findings.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\gym\gym-04-baseline-findings.zh-CN.md)
 - [gym-tooling-backlog.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\gym\gym-tooling-backlog.zh-CN.md)
 - [mcp-tooling-review.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\gym\mcp-tooling-review.zh-CN.md)
 - [hub-vs-remotemcp-boundary.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\gym\hub-vs-remotemcp-boundary.zh-CN.md)
