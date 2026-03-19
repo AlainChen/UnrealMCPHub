@@ -57,6 +57,27 @@ Optional branch:
 
 In short: upstream is the base product, while this fork is organized as a research and workflow-oriented variant for Unreal AI experimentation.
 
+## Fork Sync Strategy
+
+This fork is intended to stay compatible with upstream rather than diverge permanently.
+
+- `main` should stay close to upstream and receive only fork-approved workflow, documentation, and broadly useful improvements.
+- `codex/lab` remains the staging branch for research, gym iteration, automation experiments, and docs that are still moving quickly.
+- Small, generally useful fixes should be split into focused branches and proposed upstream when practical.
+- Fork-specific workflow assets, local evidence handling rules, and Gym research notes can stay in this fork even if they are never proposed upstream.
+
+Recommended sync loop:
+
+1. `fetch upstream`
+2. update local `main` from `upstream/main`
+3. merge the refreshed `main` back into `codex/lab`
+4. carve out small upstream-friendly branches only for changes that are clean and generally reusable
+
+In practice, that means:
+- treat this fork as the research/control-plane layer
+- treat upstream as the long-term compatibility baseline
+- avoid mixing local artifact decisions or team-specific workflow rules into upstream-facing changes
+
 ## Benchmark Status
 
 This fork has now driven a `vampire-survivors-v1` style benchmark through a full validation ladder:

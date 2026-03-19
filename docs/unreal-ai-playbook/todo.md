@@ -1,77 +1,94 @@
 # Unreal AI TODO
 
-## Goal
+## Purpose
 
-Establish a project-specific Unreal AI workflow on top of:
-- [use-unrealhub](C:\Users\alain\Documents\Playground\UnrealMCPHub\skills\use-unrealhub\SKILL.md)
+This file is the living management reference for this fork.
 
-This TODO intentionally starts with workflow and safety, then moves toward stronger autonomy and benchmark usage.
+Use it to track:
+- what is already established
+- what still needs to be hardened
+- what the next concrete gym and productionization steps are
 
-## P0 Environment And Connectivity
+## Completed Baseline
 
-- [ ] Confirm the preferred client can connect to `RemoteMCP` directly.
-- [ ] Confirm the preferred client can connect through UnrealMCPHub.
-- [ ] Verify `ue_status` and `get_unreal_state` in the test project.
-- [ ] Verify one simple `ue_run_python` call end to end.
-- [ ] Record the team's canonical MCP client configuration.
+- [x] `RemoteMCP` and UnrealMCPHub connectivity validated on the local sandbox project
+- [x] default sandbox root and `AI_TestMap` established
+- [x] `team-unreal-workflow` created as the project-level wrapper skill
+- [x] workflow, rules, benchmark ladder, artifact template, and implementation notes documented
+- [x] `benchmark-preflight` implemented
+- [x] `benchmark-lite` implemented
+- [x] `L0`, `L1`, and `L2` ladder stages exercised in the external Unreal sandbox project
+- [x] `vampire-survivors-v1` style benchmark reached a packaged, showcase-ready pass in the external Unreal project
+- [x] `Baseline Track` defined as the current Gym progression path
 
-## P1 Sandbox Setup
+## Active TODO
 
-- [ ] Create `/Game/__Sandbox/` as the default AI content root.
-- [ ] Create `/Game/__Sandbox/Maps/AI_TestMap`.
-- [ ] Decide whether any additional restricted prototype roots are allowed.
-- [ ] Document the default allowed and forbidden paths in project docs.
+### Workflow Hardening
 
-## P2 Safety And Review
+- [ ] define the default safe validation path that prefers cold compile, package checks, and log evidence over long PIE automation chains
+- [ ] add a small failure taxonomy for benchmark runs: connectivity, metadata-only, execution timeout, editor unhealthy, package failure
+- [ ] formalize the four operating modes: `read-only`, `sandbox-prototype`, `restricted-edit`, `high-trust maintenance`
+- [ ] standardize the end-of-task summary format across docs and artifacts
+- [ ] improve local tooling ergonomics when Python is not on `PATH`
 
-- [ ] Adopt [rules.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\rules.md) as the default policy.
-- [ ] Define who acts as technical owner for AI tasks.
-- [ ] Define which task types require explicit human approval.
-- [ ] Define the minimum change summary format for every AI task.
-- [ ] Define the minimum validation checklist for assets, maps, and code changes.
+### Audit And Review
 
-## P3 Minimal Capability Verification
+- [ ] add a binary asset audit template for `.uasset` and `.umap` changes
+- [ ] add an asset-reference review template so Unreal changes are not reviewed as raw binaries only
+- [ ] require agent/client/model identity in every benchmark artifact
+- [ ] keep the repo/external-project artifact boundary documented and enforced
+- [ ] ensure externally shared docs and reports mask local absolute paths, ports, and machine-specific identifiers
 
-- [ ] Ask AI to read current Unreal project state and summarize it.
-- [ ] Ask AI to create one sandbox blueprint actor.
-- [ ] Ask AI to place one object in the sandbox test map.
-- [ ] Ask AI to run PIE and report success or failure.
-- [ ] Ask AI to create one minimal prototype widget without touching production UI.
+### Regression And Reproducibility
 
-## P4 Task Templates
+- [ ] turn benchmark-lite into a repeatable regression gate
+- [ ] add one packaged-build smoke-check example to the playbook
+- [ ] define a lightweight periodic health check for MCP reachability, tool usability, and package viability
 
-- [ ] Create a template for "sandbox actor prototype".
-- [ ] Create a template for "prototype widget".
-- [ ] Create a template for "read-only project analysis".
-- [ ] Create a template for "restricted feature task".
-- [ ] Create a template for "failure report and retry plan".
+### Capability Gym
 
-## P5 Team Wrapper Skill
+- [x] lock the first two pilot domains for showcase work
+- [x] rewrite the first two pilot domains around 3D-readable showcase tasks instead of combat-first tasks
+- [x] write task templates for `lighting/readability` and `space/readability`
+- [x] define the evidence bundle for every gym task: before/after image, validation note, risk summary, readiness score
+- [x] clarify that `Gym-01` is a baseline, fully automated pass rather than an advanced lighting showcase
+- [x] summarize the first Gym tooling backlog and MCP review findings
+- [x] document `Gym-01` as a full baseline brief with evidence and boundary sections
+- [x] validate a `RemoteMCP` P0 baseline for map lifecycle, scene/testbed construction, evidence capture, and health/reconnect semantics
+- [x] validate a `RemoteMCP` P0.5 baseline for `map_unsaved`, `map_not_found`, and `map_already_exists`
+- [ ] complete `Gym-01` `Lighting Readability Modify`
+- [ ] start `Gym-02` `3D Space Readability Modify`
+- [ ] define baseline briefs for `Gym-03` `3D Gameplay Feedback`, `Gym-04` `3D Combat Encounter`, and `Gym-05` `3D Animation / Locomotion`
+- [ ] decide whether to keep Gym on temporary benchmark maps or split a dedicated `__Gym` asset root
+- [ ] produce the first figure-rich feasibility report from two successful gym pilots
+- [ ] decide when stable gym templates should move from docs into `team-unreal-workflow` references
 
-- [ ] Decide whether to keep the team layer as docs or turn it into a real skill.
-- [ ] If creating a skill, name it something like `team-unreal-workflow`.
-- [ ] Put workflow, safety rules, and templates into references under that skill.
-- [ ] Validate that the team skill narrows `use-unrealhub` instead of duplicating it.
+### Gym Tooling Backlog
 
-## P6 Benchmark Preparation
+- [x] define the Hub-side P0/P1/P2 tooling gap priorities for Gym
+- [x] P0: add stable map lifecycle tools for blank-map creation, loading, and save-as
+- [x] P0: add minimal scene/testbed construction tools for Gym maps
+- [ ] P0: wire the validated `RemoteMCP` map/session semantics back into Hub-side gym workflows and examples
+- [ ] P0: add structured lighting rig and preset tools
+- [x] P0: add stable evidence capture helpers for before/after screenshots
+- [ ] P1: add safe Post Process Volume wrappers instead of raw Python property guesses
+- [ ] P1: reduce reliance on long `run_python_script` chains for Gym scenarios
+- [x] document the Hub-only foundation plan before deciding whether to fork `RemoteMCP`
 
-- [ ] Finish the first three minimal capability tasks without leaving sandbox scope.
-- [ ] Define a lightweight internal benchmark before using the full framework.
-- [ ] Choose one scenario from [ue-benchmark](C:\Users\alain\Documents\Playground\UnrealMCPHub\skills\ue-benchmark\SKILL.md).
-- [ ] Decide what counts as a successful dry run before formal scoring.
-- [ ] Record token and task logs consistently.
+## Long-Term Direction
 
-## P7 Longer-Term Engineering
+- [ ] support source-built Unreal Engine workflows in addition to Launcher-based validation
+- [ ] define how Hub should detect and manage multiple engine layouts and project engine forks
+- [ ] research crash, symbol, and packaging workflows for source-built engine projects
+- [ ] design an intermediate change representation so AI intent can be reviewed before Unreal binary assets are touched
+- [ ] explore structured gameplay/map/asset change summaries beyond raw Git diffs
+- [ ] evaluate whether a middleware gameplay layer would reduce direct AI pressure on binary assets and low-level C++
+- [ ] compare candidate middleware layers such as AngelScript, Lua, project-specific DSLs, or other script-facing runtimes
+- [ ] define what industrialized adoption means for a large project: permissions, auditability, reproducibility, rollback, and multi-user operation
 
-- [ ] Decide whether the team needs Hub source changes.
-- [ ] If yes, use [unrealhub-developer](C:\Users\alain\Documents\Playground\UnrealMCPHub\skills\unrealhub-developer\SKILL.md) for those changes.
-- [ ] Identify missing UE-side tools that would reduce unsafe Python fallbacks.
-- [ ] Identify missing audit or reporting hooks for binary asset work.
-- [ ] Revisit workflow rules after the first benchmark cycle.
+## Next Review Trigger
 
-## Immediate Next Actions
-
-- [ ] Review [skill-system.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\skill-system.md) with the team.
-- [ ] Confirm the sandbox root and test map naming.
-- [ ] Run one read-only task and one sandbox write task using the new workflow.
-- [ ] Capture the first change summary as the baseline template.
+Update this file whenever one of these happens:
+- a new gym domain becomes active
+- a benchmark validation path becomes stable enough to standardize
+- a process moves from experimentation into team default practice
