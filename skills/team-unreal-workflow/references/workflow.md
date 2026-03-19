@@ -17,6 +17,13 @@
 - Use sandbox mode for prototypes and experiments.
 - Use restricted mode only when the task explicitly names a feature path or module.
 
+The workflow should account for five AI usage modes:
+- advisory / read-only
+- sandbox prototyping
+- restricted co-building
+- workflow-node automation
+- high-trust maintenance
+
 ## Tool Priority
 
 1. `get_project_config`
@@ -27,6 +34,12 @@
 6. `ue_list_domains`
 7. `ue_list_tools`
 8. `ue_call` or `ue_run_python`
+
+When `RemoteMCP` exposes validated structured tools, prefer them over long Python chains for:
+- map lifecycle
+- scene/testbed construction
+- evidence capture
+- health/reconnect checks
 
 ## Validation Minimums
 
@@ -40,6 +53,17 @@ For code tasks:
 - compile result
 - target behavior proof
 - relevant log review
+
+For gym baseline tasks:
+- one matching before/after pair
+- one execution summary
+- one risk note
+- one readiness conclusion
+
+If a task used a session-disrupting map operation, reconnect first and then verify:
+- `ping`
+- `get_editor_state`
+- `get_current_level`
 
 ## Escalation Cases
 

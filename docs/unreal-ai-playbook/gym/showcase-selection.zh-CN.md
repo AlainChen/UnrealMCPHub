@@ -82,26 +82,31 @@
 
 当前优先顺序：
 
-1. 先用 `TestMCP` 做 `Gym-01 Combat Modify`
-2. 后续若做动作表现类 Gym，再按需安装 `GASP`
-3. 若做关卡/空间类 showcase，再按需安装 `Stack O Bot`
-4. 若进入更正式的 combat/system showcase，再考虑 `Lyra`
+1. 先用轻量、稳定、可反复修改的 3D 场景完成 `Gym-01 Lighting Readability Modify`
+2. 再用同类稳定场景推进 `Gym-02 Space Readability Modify`
+3. 后续若做动作表现类 Gym，再按需安装 `GASP`
+4. 若做更正式的空间/关卡 showcase，再按需安装 `Stack O Bot`
+5. 若进入更正式的 combat/system showcase，再考虑 `Lyra`
 
 这样可以同时满足：
 - 轻量启动
 - 尽量复用已有成果
+- 先铺开 baseline track
 - 只在需要时引入更重的官方样本
 
 ## 当前选择
 
-当前阶段，`Gym-01 Combat Modify` 默认使用：
+当前阶段，`Gym-01` 和 `Gym-02` 的默认载体应优先满足：
 
-- `TestMCP` 外部 benchmark 工程
+- 3D 场景稳定
+- before/after 机位容易固定
+- 适合小范围 modify
+- 不强依赖复杂 gameplay loop
 
-理由：
-- 它已经具备稳定的战斗主循环
-- 可以做最轻量的 `modify` 任务
-- 更容易快速产出第一份前后对比和图文报告
+这也是为什么当前更推荐：
+- 先完成 `lighting/readability`
+- 再完成 `space/readability`
+- 不把第一批 baseline 直接绑在 combat benchmark 上
 
 ## 后续扩展策略
 
