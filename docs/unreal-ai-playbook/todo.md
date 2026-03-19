@@ -29,6 +29,19 @@ Use it to track:
   - `map_already_exists`
 - [x] early capability-validation / Gym exploration produced enough evidence to inform current platform conclusions
 
+## Important Non-Goals For This Phase
+
+The following are intentionally **not** treated as completed in the current phase:
+
+- [ ] seamless map transition inside one uninterrupted MCP session
+- [ ] a stable typed external runner replacing the current ad-hoc PowerShell client
+- [ ] full `P1` completion for `RemoteMCP`
+- [ ] full post-process wrapper support
+- [ ] source-built Unreal workflow support
+- [ ] a finished long-term industrialized multi-user operating model
+- [ ] a fully finalized figure-rich external report package
+- [ ] locomotion / animation showcase validation with a proper standard asset or sample project
+
 ## Active TODO
 
 ### Workflow Hardening
