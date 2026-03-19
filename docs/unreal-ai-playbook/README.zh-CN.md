@@ -20,6 +20,8 @@
    当前已经启动的 Gym 实例
 6. [gym-feasibility-report.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\gym-feasibility-report.zh-CN.md)
    当前 Gym 的完整总结性报告
+7. [skills-candidate-map.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\skills-candidate-map.zh-CN.md)
+   当前哪些内容已经适合下沉成 skills / references
 
 如果你的目标是继续改 `RemoteMCP` 或理解 Gym 自动化边界，建议在读完上面的 `Current` 后，再补读：
 - [gym/hub-vs-remotemcp-boundary.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\gym\hub-vs-remotemcp-boundary.zh-CN.md)
