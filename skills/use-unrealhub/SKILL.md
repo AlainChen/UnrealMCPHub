@@ -56,6 +56,7 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep, CallMcpTool
 | | `ue_run_python` | script | 执行 Python 脚本 |
 | **会话** | `add_note` | content | 添加笔记 |
 | | `get_session` | scope, format | 查看会话 |
+| **帮助** | `help` | topic | 获取使用指南（按 topic 分段：compile, launch, pie, slate, umg, full 等） |
 
 ### 1.3 Domain 工具
 
