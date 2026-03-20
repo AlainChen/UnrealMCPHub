@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import logging
 import os
@@ -7,9 +9,10 @@ import time
 
 import psutil
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import FastMCP, Context
 
 from unrealhub.tools.discovery_tools import probe_unreal_mcp_with_fallback
+from unrealhub.tools.build_tools import _compile
 from unrealhub.ue_client import UEMCPClient
 from unrealhub.utils.process import find_unreal_editor_processes, is_process_alive
 from unrealhub.utils.ue_paths import UEPathResolver
@@ -244,6 +247,25 @@ def register_launch_tools(
             "Check if RemoteMCP plugin is enabled and MCP.Start has been run."
         )
 
+    async def _compile_before_launch(
+        paths, build_config: str, *, ctx: Context | None = None,
+    ) -> str:
+        build_target = UEPathResolver.get_editor_build_target(
+            paths.uproject_path, paths.project_name
+        )
+        compile_result = await _compile(
+            paths,
+            "Editor",
+            build_config,
+            "Win64",
+            "",
+            build_target_override=build_target,
+            ctx=ctx,
+        )
+        if not compile_result.startswith("Build SUCCEEDED"):
+            return "Compile before launch FAILED.\n" + compile_result
+        return "Compile before launch SUCCEEDED.\n" + compile_result
+
     @mcp.tool()
     async def launch_editor(
         action: str = "start",
@@ -253,6 +275,7 @@ def register_launch_tools(
         exec_cmds: str = "",
         extra_args: str = "",
         build_config: str = "Development",
+        ctx: Context | None = None,
     ) -> str:
         """Manage UE Editor lifecycle for the active project.
 
@@ -268,6 +291,7 @@ def register_launch_tools(
                       installs only have Development.
 
         Requires project configured via setup_project.
+        Build progress is streamed to the client in real time.
         """
         if build_config not in UEPathResolver.VALID_BUILD_CONFIGS:
             return (
@@ -409,12 +433,16 @@ def register_launch_tools(
             if _find_project_procs():
                 await asyncio.sleep(3)
 
+            compile_msg = await _compile_before_launch(paths, build_config, ctx=ctx)
+            if compile_msg.startswith("Compile before launch FAILED"):
+                return f"Stop: {kill_msg}\n{compile_msg}"
+
             start_msg = await _start_editor(
                 config, state, paths, project,
                 headless, extra_args, exec_cmds, wait_for_mcp, timeout,
                 build_config,
             )
-            return f"Stop: {kill_msg}\n{start_msg}"
+            return f"Stop: {kill_msg}\n{compile_msg}\n{start_msg}"
 
         # action == "start" (default)
         running_for_project = _find_project_procs()
@@ -426,11 +454,16 @@ def register_launch_tools(
                 f"Use launch_editor(action='restart') to force restart."
             )
 
-        return await _start_editor(
+        compile_msg = await _compile_before_launch(paths, build_config, ctx=ctx)
+        if compile_msg.startswith("Compile before launch FAILED"):
+            return compile_msg
+
+        start_msg = await _start_editor(
             config, state, paths, project,
             headless, extra_args, exec_cmds, wait_for_mcp, timeout,
             build_config,
         )
+        return f"{compile_msg}\n{start_msg}"
 
     @mcp.tool()
     async def get_editor_status() -> str:
