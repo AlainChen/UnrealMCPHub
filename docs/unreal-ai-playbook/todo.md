@@ -81,6 +81,7 @@ The following are intentionally **not** treated as completed in the current phas
 - [ ] add structured lighting rig and preset tools to the standard workflow examples
 - [ ] add safe Post Process Volume wrappers instead of raw Python property guesses
 - [ ] continue reducing reliance on long `run_python_script` chains in higher-level validation tasks
+- [ ] formalize `RemoteMCP` project-side runtime dependency sync so upstream code sync does not still fail at Unreal Python import time
 
 ## Long-Term Direction
 
