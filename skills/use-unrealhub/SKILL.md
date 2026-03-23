@@ -22,7 +22,7 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep, CallMcpTool
 项目已配置? ──No──> setup_project(uproject_path="...")
       │Yes
       ▼
-编辑器在线? ──No──> 需要编译? ─Yes─> build_project()
+编辑器在线? ──No──> 需要编译? ─Yes─> launch_editor()   # launch_editor 会先编译再启动
       │Yes              │No
       │                 ▼
       │            launch_editor()
@@ -43,7 +43,7 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep, CallMcpTool
 | | `get_project_config` | — | 查看配置 |
 | | `hub_status` | — | Hub 全局状态 |
 | **编译** | `build_project` | action, target, configuration | UBT 编译/打包 |
-| **启动** | `launch_editor` | action, exec_cmds, build_config | 编辑器生命周期（build_config: Development/DebugGame/Debug） |
+| **启动** | `launch_editor` | action, exec_cmds, build_config | 编辑器生命周期；`start/restart` 会先编译再启动（build_config: Development/DebugGame/Debug） |
 | | `get_editor_status` | — | 进程状态 |
 | **实例** | `discover_instances` | rescan | 发现 Unreal MCP 实例（两阶段端口扫描 + serverInfo 验证 + MCP 自识别 + 自动注册 + 孤儿进程扫描） |
 | | `manage_instance` | action, instance, url, port | 注册/注销/切换实例（instance 支持 key/port/项目名） |
@@ -56,6 +56,7 @@ allowed-tools: Bash, Read, Write, Edit, Glob, Grep, CallMcpTool
 | | `ue_run_python` | script | 执行 Python 脚本 |
 | **会话** | `add_note` | content | 添加笔记 |
 | | `get_session` | scope, format | 查看会话 |
+| **帮助** | `help` | topic | 获取使用指南（按 topic 分段：compile, launch, pie, slate, umg, full 等） |
 
 ### 1.3 Domain 工具
 
@@ -139,7 +140,15 @@ manage_instance(action="use", instance="Develop57")        // 按项目名
 
 **决策路径**：
 1. 优先 Live Coding（快速、不中断工作流）
-2. Live Coding 失败且不是代码错误 → 关闭编辑器 → `build_project()` → 重新 `launch_editor()`
+2. Live Coding 失败且不是代码错误 → 关闭编辑器 → 重新 `launch_editor()`（会先编译再启动）
+
+### 2.1.1 编译流式进度
+
+`build_project()` 和 `launch_editor()` 会通过 MCP progress notification 实时推送编译进度：
+
+- **Progress**：解析 UBT 输出中的 `[x/y]` 标记，通过 `report_progress(current, total, line)` 推送进度与日志文本
+- **Log**：每一行非空输出都即时推送——`[x/y]` 编译行 → `ctx.info`，错误 → `ctx.error`，警告 → `ctx.warning`，其他 → `ctx.info`
+- **最终返回值**：仍包含完整的错误/警告摘要和输出尾部，不受流式影响
 
 ### 2.2 PCH 内存不足 (C3859 / C1076)
 

@@ -2,7 +2,7 @@ import logging
 from mcp.server.fastmcp import FastMCP
 
 from unrealhub.config import ProjectConfig
-from unrealhub.state import StateStore
+from unrealhub.state import StateStore, make_key
 from unrealhub.watcher import ProcessWatcher
 from unrealhub.ue_client import UEMCPClient
 
@@ -43,14 +43,53 @@ def get_watcher() -> ProcessWatcher:
     return _watcher
 
 
+def _prefer_active_project_instance(state: StateStore) -> str | None:
+    """Prefer the instance that matches the configured active project.
+
+    UE editors are routinely restarted onto the same MCP port across different
+    projects. When Hub state still carries the previous project metadata for
+    that port, route calls to the active project's key and rebind the instance
+    metadata in-place.
+    """
+    config = get_config()
+    project = config.get_active_project()
+    if not project:
+        return None
+
+    desired_key = make_key(project.uproject_path, project.mcp_port)
+    desired = state.get_instance(desired_key)
+    if desired and desired.status == "online":
+        return desired.key
+
+    for candidate in state.find_by_port(project.mcp_port):
+        if candidate.status != "online":
+            continue
+        rebound = state.upsert(
+            port=project.mcp_port,
+            project_path=project.uproject_path,
+            url=candidate.url or f"http://localhost:{project.mcp_port}/mcp",
+            engine_root=project.engine_root,
+            pid=candidate.pid,
+            status="online",
+        )
+        return rebound.key
+
+    return None
+
+
 def get_client(instance_id: str | None) -> UEMCPClient | None:
     state = get_state()
 
     if instance_id is None:
-        active = state.get_active_instance()
+        preferred_key = _prefer_active_project_instance(state)
+        if preferred_key:
+            instance_id = preferred_key
+        active = state.get_active_instance() if instance_id is None else None
         if not active:
-            return None
-        instance_id = active.key
+            if instance_id is None:
+                return None
+        else:
+            instance_id = active.key
 
     inst = state.get_instance(instance_id)
     if not inst or inst.status != "online":
@@ -231,7 +270,9 @@ def create_hub_mcp() -> FastMCP:
             sections.append("  No project configured. Run setup_project().")
 
         # --- Plugin Source ---
+        from unrealhub.config import PLUGIN_TAG
         sections.append("\n[Plugin Source]")
+        sections.append(f"  Pinned tag: {PLUGIN_TAG}")
         sections.append(f"  Repo: {config.get_plugin_repo()}")
         cache = config.get_plugin_cache()
         sections.append(f"  Local cache: {cache or '(none)'}")
@@ -293,6 +334,7 @@ def create_hub_mcp() -> FastMCP:
     from unrealhub.tools.log_tools import register_log_tools
     from unrealhub.tools.proxy_tools import register_proxy_tools
     from unrealhub.tools.session_tools import register_session_tools
+    from unrealhub.tools.help_tools import register_help_tools
 
     register_build_tools(mcp, get_config, get_state)
     register_launch_tools(mcp, get_config, get_state, get_ue_client_factory)
@@ -302,6 +344,7 @@ def create_hub_mcp() -> FastMCP:
     register_log_tools(mcp, get_config, get_state)
     register_proxy_tools(mcp, get_state, get_client)
     register_session_tools(mcp, get_state)
+    register_help_tools(mcp)
 
     return mcp
 
