@@ -74,8 +74,7 @@ The following are intentionally **not** treated as completed in the current phas
 - [ ] extract only the stable validation patterns from archived exploration into `team-unreal-workflow` references
 - [ ] produce a clean no-image and figure-rich external report package based on the already validated baseline work
 - [ ] keep benchmark and capability-validation conclusions summarized without restoring the entire Gym process trail into the main reading path
-- [ ] run a first official-sample playable-game validation slice using the new `playable-game-validation-plan`
-- [ ] start with `Stack O Bot` as the first full playable validation target, then branch to `Lyra` and `GASP`
+- [ ] move official-sample playable-game validation into a separate dedicated workspace instead of expanding the Hub playbook main path
 
 ### RemoteMCP Foundation Follow-Up
 
