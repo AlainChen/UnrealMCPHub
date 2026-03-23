@@ -17,6 +17,7 @@
 3. [todo.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\todo.md)
 4. [current-status-summary.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\current-status-summary.zh-CN.md)
 5. [skills-candidate-map.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\skills-candidate-map.zh-CN.md)
+6. [playable-game-validation-plan.zh-CN.md](C:\Users\alain\Documents\Playground\UnrealMCPHub\docs\unreal-ai-playbook\playable-game-validation-plan.zh-CN.md)
 
 其中：
 
