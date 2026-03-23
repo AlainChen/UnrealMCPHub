@@ -3,10 +3,12 @@ import click
 import logging
 import sys
 
+from unrealhub import __version__
 from unrealhub.tools.discovery_tools import probe_unreal_mcp_with_fallback
 
 
 @click.group()
+@click.version_option(version=__version__, prog_name="unrealhub")
 @click.option("--verbose", "-v", is_flag=True, help="Enable verbose logging")
 def main(verbose: bool):
     """UnrealMCPHub - Manage Unreal Engine MCP instances."""
