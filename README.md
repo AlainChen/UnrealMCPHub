@@ -41,6 +41,7 @@ Compared with upstream, this fork currently adds:
 
 - **Team workflow docs** under [`docs/unreal-ai-playbook/`](./docs/unreal-ai-playbook/) for sandbox rules, review flow, benchmark planning, and research notes
 - **A project-facing wrapper skill** under [`skills/team-unreal-workflow/`](./skills/team-unreal-workflow/) that narrows `use-unrealhub` into a safer day-to-day workflow
+- **A project stack analysis skill** under [`skills/analyze-unreal-project-stack/`](./skills/analyze-unreal-project-stack/) for internal-project onboarding, custom-engine assessment, and config or source-of-truth analysis
 - **A benchmark ladder** with lighter scenarios before the heavyweight `vampire-survivors-v1` benchmark
 - **Local experiment helpers** on the `codex/lab` branch for source-run and environment troubleshooting
 

@@ -23,6 +23,7 @@
 3. `todo.md`
 4. `current-status-summary.zh-CN.md`
 5. `skills-candidate-map.zh-CN.md`
+6. [`../../skills/analyze-unreal-project-stack/SKILL.md`](../../skills/analyze-unreal-project-stack/SKILL.md)
 
 其中：
 
@@ -36,6 +37,8 @@
   说明当前已经完成了什么，以及 benchmark / MCP / playbook 到了什么阶段
 - `skills-candidate-map.zh-CN.md`
   说明哪些内容已经适合沉淀成 reference 或 skill
+- [`../../skills/analyze-unreal-project-stack/SKILL.md`](../../skills/analyze-unreal-project-stack/SKILL.md)
+  说明如何分析内部 Unreal 项目的结构、技术栈、引擎耦合、配置流和 source-of-truth
 
 ## Snapshot
 
