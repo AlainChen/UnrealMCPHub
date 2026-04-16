@@ -2,9 +2,14 @@ from pydantic import BaseModel
 from pathlib import Path
 from datetime import datetime
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 CONFIG_DIR = Path.home() / ".unrealhub"
 CONFIG_PATH = CONFIG_DIR / "config.json"
+
+CONFIG_SCHEMA_VERSION = 2
 
 
 class ProjectEntry(BaseModel):
@@ -32,6 +37,7 @@ DEFAULT_PLUGIN_REPO = _plugin_zip_url(PLUGIN_TAG)
 
 
 class HubConfig(BaseModel):
+    schema_version: int = CONFIG_SCHEMA_VERSION
     projects: dict[str, ProjectEntry] = {}
     active_project: str = ""
     scan_ports: list[int] = [8422, 8423, 8424, 8425]
@@ -49,9 +55,20 @@ class ProjectConfig:
         if CONFIG_PATH.exists():
             try:
                 data = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+                loaded_version = data.get("schema_version", 1)
+                if loaded_version < CONFIG_SCHEMA_VERSION:
+                    data = self._migrate_config(data, loaded_version)
                 self._config = HubConfig.model_validate(data)
             except (json.JSONDecodeError, Exception):
                 pass
+
+    @staticmethod
+    def _migrate_config(data: dict, from_version: int) -> dict:
+        """Migrate config from older schema versions."""
+        if from_version < 2:
+            data["schema_version"] = CONFIG_SCHEMA_VERSION
+            logger.info("Migrated config.json v%d → v%d", from_version, CONFIG_SCHEMA_VERSION)
+        return data
 
     def _save(self) -> None:
         CONFIG_DIR.mkdir(parents=True, exist_ok=True)

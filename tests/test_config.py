@@ -123,3 +123,67 @@ class TestProjectConfig:
         cfg.save_project("First", "/first.uproject", "/e")
         cfg.save_project("Second", "/second.uproject", "/e")
         assert cfg.get_active_project_name() == "First"
+
+
+class TestConfigSchemaVersion:
+    def test_new_config_has_version(self, tmp_home):
+        """新创建的 config 包含 schema_version。"""
+        from unrealhub.config import CONFIG_SCHEMA_VERSION
+        cfg = ProjectConfig()
+        cfg.save_project("Test", "G:/Test.uproject", "G:/UE", port=8422)
+        raw = json.loads((tmp_home / "config.json").read_text(encoding="utf-8"))
+        assert raw["schema_version"] == CONFIG_SCHEMA_VERSION
+
+    def test_v1_config_migrated(self, tmp_home):
+        """没有 schema_version 的旧 config 自动迁移。"""
+        old_config = {
+            "projects": {
+                "Test": {
+                    "uproject_path": "G:/Test.uproject",
+                    "engine_root": "G:/UE",
+                    "mcp_port": 8422,
+                }
+            },
+            "active_project": "Test",
+            "scan_ports": [8422],
+            "scan_ports_extended": [8000, 8001],
+            "plugin_repo": "https://example.com/plugin.zip",
+            "plugin_local_cache": "",
+        }
+        (tmp_home / "config.json").write_text(json.dumps(old_config), encoding="utf-8")
+        cfg = ProjectConfig()
+        assert cfg.is_configured()
+        proj = cfg.get_active_project()
+        assert proj is not None
+        assert proj.uproject_path == "G:/Test.uproject"
+
+    def test_v2_config_loads_directly(self, tmp_home):
+        """v2 config 直接加载，不触发迁移。"""
+        from unrealhub.config import CONFIG_SCHEMA_VERSION
+        v2_config = {
+            "schema_version": CONFIG_SCHEMA_VERSION,
+            "projects": {},
+            "active_project": "",
+            "scan_ports": [8422],
+            "scan_ports_extended": [],
+            "plugin_repo": "",
+            "plugin_local_cache": "",
+        }
+        (tmp_home / "config.json").write_text(json.dumps(v2_config), encoding="utf-8")
+        cfg = ProjectConfig()
+        assert not cfg.is_configured()
+
+    def test_future_version_still_loads(self, tmp_home):
+        """未来版本的 config 仍然能加载。"""
+        future_config = {
+            "schema_version": 99,
+            "projects": {"X": {"uproject_path": "G:/X.uproject", "engine_root": "G:/UE", "mcp_port": 8422}},
+            "active_project": "X",
+            "scan_ports": [8422],
+            "scan_ports_extended": [],
+            "plugin_repo": "",
+            "plugin_local_cache": "",
+        }
+        (tmp_home / "config.json").write_text(json.dumps(future_config), encoding="utf-8")
+        cfg = ProjectConfig()
+        assert cfg.is_configured()
