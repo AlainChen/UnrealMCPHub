@@ -39,11 +39,22 @@ def _parse_response(resp: httpx.Response) -> dict | None:
         return None
 
 
+def _classify_server(name: str) -> str:
+    """Classify MCP server type from serverInfo.name."""
+    name_lower = name.lower()
+    if "eca" in name_lower:
+        return "ecabridge"
+    if "remote" in name_lower:
+        return "remotemcp"
+    return "unreal"
+
+
 async def probe_unreal_mcp(url: str, timeout: float = 3.0) -> dict | None:
     """Probe endpoint and verify it is an Unreal MCP server.
 
-    Returns {"server_name": ...} if the endpoint responds with a serverInfo
-    whose name contains "unreal" (case-insensitive). Returns None otherwise.
+    Returns {"server_name": ..., "server_type": "remotemcp"|"ecabridge"|"unreal"}
+    if the endpoint responds with a serverInfo whose name contains "unreal"
+    (case-insensitive). Returns None otherwise.
     """
     try:
         async with httpx.AsyncClient(timeout=httpx.Timeout(timeout)) as client:
@@ -66,7 +77,10 @@ async def probe_unreal_mcp(url: str, timeout: float = 3.0) -> dict | None:
             result = data.get("result", {})
             server_name = result.get("serverInfo", {}).get("name", "")
             if "unreal" in server_name.lower():
-                return {"server_name": server_name}
+                return {
+                    "server_name": server_name,
+                    "server_type": _classify_server(server_name),
+                }
             return None
     except Exception:
         return None

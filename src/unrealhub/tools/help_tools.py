@@ -20,6 +20,7 @@ _TOPIC_ALIASES: dict[str, list[str]] = {
     "rules": ["rules", "行为", "准则", "guidelines"],
     "slate": ["slate", "ui", "窗口", "widget tree"],
     "umg": ["umg", "widget", "hud", "umg widget"],
+    "eca": ["eca", "ecabridge", "lisp", "blueprint lisp", "238"],
 }
 
 _PART_TOPIC_MAP: dict[int, str] = {
@@ -32,6 +33,7 @@ _PART_TOPIC_MAP: dict[int, str] = {
     7: "rules",
     8: "slate",
     9: "umg",
+    10: "eca",
 }
 
 
@@ -100,6 +102,7 @@ def register_help_tools(mcp: FastMCP) -> None:
           'rules'      — Part 7: behavioral guidelines.
           'slate'      — Part 8: Slate UI manipulation.
           'umg'        — Part 9: UMG widget creation.
+          'eca'        — Part 10: ECA Bridge (238+ commands, BlueprintLisp).
           'full'       — complete guide (all parts).
 
         Aliases are supported: 'build'='compile', 'editor'='launch',

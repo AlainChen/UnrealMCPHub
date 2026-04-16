@@ -507,3 +507,96 @@ wb = asset_tools.create_asset('MyHUD', '/Game/Widgets', None, factory)
 
 C++ 后端硬编码资产保存路径为 `/Game/Widgets/`，Python 层的 `path` 参数当前被忽略。
 所有 UMG 资产统一创建在 `/Game/Widgets/<widget_name>` 下。
+
+---
+
+## Part 10: ECA Bridge — 238+ 原子命令
+
+ECABridge 是引擎内置的实验性插件，提供 238+ 个 C++ 原子命令。通过 RemoteMCP 的 `eca` domain 访问。
+
+### 10.1 访问方式
+
+ECA 通过 RemoteMCP 的 eca domain 代理，**不需要直连 ECA 端口**：
+
+```
+# 检查可用性
+ue_call("eca_status", domain="eca")
+
+# 搜索命令（不确定命令名时优先用这个）
+ue_call("eca_search", {"keyword": "mesh boolean"}, domain="eca")
+
+# 按分类列出
+ue_call("eca_list", {"category": "BlueprintLisp"}, domain="eca")
+
+# 执行命令
+ue_call("eca_call", {"command": "lisp_to_blueprint", "arguments": {
+    "blueprint_path": "/Game/Test/BP_Test",
+    "code": "(event BeginPlay (print \"Hello\"))",
+    "auto_layout": true
+}}, domain="eca")
+```
+
+### 10.2 19 个分类
+
+| 分类 | 命令数 | 用途 |
+|------|--------|------|
+| Actor | 8 | Actor 查询/创建/删除/变换 |
+| Asset | 31 | 资产管理 |
+| Blueprint | 13 | 蓝图资产操作 |
+| BlueprintLisp | 4 | ★ Lisp DSL 写蓝图逻辑 |
+| BlueprintNode | 24 | 蓝图节点操作 |
+| Component | 5 | 组件操作 |
+| DataTable | 4 | 数据表读写 |
+| Editor | 14 | 编辑器操作 |
+| MaterialNode | 16 | 材质节点/连线/布局 |
+| Mesh | 40 | 程序化建模（布尔/挤出/Voronoi 等） |
+| Niagara | 23 | VFX 系统/发射器/模块 |
+| MVVM | 11 | ViewModel/数据绑定 |
+| WidgetTree | 15 | UI 结构操作 |
+| View | 3 | 视口操作 |
+| Save | 4 | 保存操作 |
+| Project | 5 | 项目操作 |
+| AI | 4 | AI 相关 |
+| Events | 3 | 编辑器事件轮询 |
+
+### 10.3 ★ Blueprint Lisp DSL（蓝图逻辑首选）
+
+用 S-expression 一次性生成蓝图节点图，替代逐个操作节点。**一次 tool call 替代 5-10 次节点操作。**
+
+```
+# 读取现有蓝图
+ue_call("eca_call", {"command": "blueprint_to_lisp", "arguments": {
+    "blueprint_path": "/Game/Test/BP_Test"
+}}, domain="eca")
+
+# 写入蓝图逻辑
+ue_call("eca_call", {"command": "lisp_to_blueprint", "arguments": {
+    "blueprint_path": "/Game/Test/BP_Test",
+    "code": "(event BeginPlay\n  (let player (GetPlayerCharacter 0))\n  (branch (valid? player)\n    :true (print \"Player found!\")\n    :false (print \"No player\")))",
+    "auto_layout": true
+}}, domain="eca")
+
+# 语法帮助
+ue_call("eca_call", {"command": "blueprint_lisp_help", "arguments": {
+    "topic": "all"
+}}, domain="eca")
+```
+
+### 10.4 ECA vs RemoteMCP 工具选择
+
+| 场景 | 推荐 | 原因 |
+|------|------|------|
+| 蓝图逻辑（事件/函数/循环） | ★ eca: BlueprintLisp | 一次调用写整段逻辑 |
+| Actor 查询（LOD/自适应详情） | RemoteMCP: level domain | 有 overview/summary/standard/full 模式 |
+| Mesh 建模 / Niagara VFX / 材质编辑 | eca | 专用命令 |
+| EdGraph 底层操作 | RemoteMCP: edgraph domain | ECA 没有通用 EdGraph |
+| Slate UI 深度操作 | RemoteMCP: slate domain | 更细粒度 |
+| 行为树 | 两者皆可 | RemoteMCP 有端到端 Skill |
+
+### 10.5 发现流程（不要猜测命令名）
+
+```
+1. ue_call("eca_search", {"keyword": "关键词"}, domain="eca")  → 搜索命令
+2. 查看返回的命令名和参数定义
+3. ue_call("eca_call", {"command": "命令名", "arguments": {...}}, domain="eca")  → 执行
+```

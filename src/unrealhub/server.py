@@ -317,6 +317,64 @@ def create_hub_mcp() -> FastMCP:
         else:
             sections.append("  No instances registered. Run discover_instances().")
 
+        # --- ECA Bridge ---
+        sections.append("\n[ECA Bridge]")
+        active_inst = state.get_active_instance()
+        if active_inst and active_inst.status == "online":
+            try:
+                eca_client = get_client(None)
+                if eca_client:
+                    eca_result = await eca_client.call_tool(
+                        "call_dispatch_tool",
+                        {
+                            "domain": "eca",
+                            "tool_name": "eca_status",
+                            "arguments": "{}",
+                        },
+                    )
+                    if eca_result.get("success"):
+                        import json as _json
+                        eca_text = ""
+                        for item in eca_result.get("content", []):
+                            if isinstance(item, dict) and item.get("type") == "text":
+                                eca_text = item.get("text", "")
+                                break
+                        if eca_text:
+                            eca_data = _json.loads(eca_text)
+                            if eca_data.get("available"):
+                                cmd_count = eca_data.get("command_count", 0)
+                                cat_count = len(eca_data.get("categories", []))
+                                sections.append(
+                                    f"  Status: AVAILABLE via RemoteMCP"
+                                    f" ({cmd_count} commands, {cat_count} categories)"
+                                )
+                            else:
+                                sections.append(
+                                    f"  Status: NOT AVAILABLE"
+                                    f" ({eca_data.get('message', 'unknown reason')})"
+                                )
+                        else:
+                            sections.append("  Status: UNKNOWN (empty response)")
+                    else:
+                        sections.append("  Status: UNKNOWN (eca_status call failed)")
+                else:
+                    sections.append("  Status: UNKNOWN (no client)")
+            except Exception:
+                sections.append("  Status: UNKNOWN (query error)")
+        else:
+            sections.append("  Status: UNKNOWN (no active UE instance online)")
+
+        # Lightweight direct probe of ECA standalone endpoint
+        from unrealhub.tools.discovery_tools import probe_unreal_mcp
+        eca_direct = await probe_unreal_mcp("http://localhost:3000/mcp", timeout=2.0)
+        if eca_direct:
+            sections.append(
+                f"  Direct endpoint: http://localhost:3000/mcp ONLINE"
+                f" ({eca_direct.get('server_name', '?')})"
+            )
+        else:
+            sections.append("  Direct endpoint: http://localhost:3000/mcp (not detected)")
+
         # --- ProcessWatcher ---
         sections.append("\n[ProcessWatcher]")
         thread = watcher._thread

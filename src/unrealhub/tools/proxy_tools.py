@@ -190,8 +190,10 @@ def register_proxy_tools(mcp: FastMCP, get_state, get_client) -> None:
     async def ue_list_domains() -> str:
         """List all available tool domains from the active UE instance.
 
-        Returns domain names with descriptions. Use ue_list_tools(domain="<name>")
-        to see tools within a specific domain, then ue_call() to invoke them.
+        Typically includes: level, blueprint, umg, edgraph, behaviortree, slate, eca.
+        The eca domain provides 238+ ECA atomic commands (Mesh, Niagara, Material, BlueprintLisp, etc.)
+
+        Use ue_list_tools(domain="<name>") to see tools within a domain, then ue_call() to invoke.
         """
         client = get_client(None)
         if not client:
@@ -320,12 +322,17 @@ def register_proxy_tools(mcp: FastMCP, get_state, get_client) -> None:
     ) -> str:
         """Call a tool on the active UE instance.
 
-        tool_name: Name of the tool (e.g. 'search_console_commands').
+        tool_name: Name of the tool (e.g. 'search_console_commands', 'eca_call').
         arguments: Tool arguments as a dict (e.g. {"keyword": "stat"}).
         domain: If specified, calls via the dispatch system (e.g. 'level', 'blueprint').
                 If empty, calls the tool directly.
+                Domains: level, blueprint, umg, edgraph, behaviortree, slate, eca.
+                ★ ECA (238+ commands): domain="eca", tool_name="eca_call",
+                  arguments={"command": "lisp_to_blueprint", "arguments": {...}}
+                ★ Blueprint Lisp DSL: one eca_call replaces 5-10 node operations.
 
-        Use ue_list_tools() first to see available tools and their parameter schemas.
+        Use ue_list_domains() to see available domains.
+        Use ue_list_tools(domain="eca") to see ECA tools.
         """
         client = get_client(None)
         if not client:
