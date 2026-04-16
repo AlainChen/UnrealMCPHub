@@ -105,6 +105,142 @@ def get_ue_client_factory():
     return None
 
 
+def _build_project_section(config) -> list[str]:
+    """Build [Project Config] + [Plugin Source] + [Plugin Install] sections."""
+    from pathlib import Path
+    from unrealhub.config import PLUGIN_TAG
+
+    sections = ["\n[Project Config]"]
+    if config.is_configured():
+        active_name = config.get_active_project_name()
+        for name, entry in config.list_projects().items():
+            marker = " *" if name == active_name else "  "
+            sections.append(
+                f" {marker}{name}: {entry.uproject_path}\n"
+                f"    Engine: {entry.engine_root} ({entry.engine_association or 'custom'})\n"
+                f"    MCP Port: {entry.mcp_port}"
+            )
+    else:
+        sections.append("  No project configured. Run setup_project().")
+
+    sections.append("\n[Plugin Source]")
+    sections.append(f"  Pinned tag: {PLUGIN_TAG}")
+    sections.append(f"  Repo: {config.get_plugin_repo()}")
+    cache = config.get_plugin_cache()
+    sections.append(f"  Local cache: {cache or '(none)'}")
+
+    sections.append("\n[Plugin Install]")
+    proj = config.get_active_project()
+    if proj:
+        project_dir = Path(proj.uproject_path).parent
+        plugin_dir = project_dir / "Plugins" / "RemoteMCP"
+        if plugin_dir.exists() and (plugin_dir / "RemoteMCP.uplugin").exists():
+            sections.append("  Directory: INSTALLED")
+            python_dir = plugin_dir / "Content" / "Python"
+            has_deps = (python_dir / "Lib" / "site-packages" / "mcp").exists()
+            sections.append(f"  Python deps: {'INSTALLED' if has_deps else 'MISSING'}")
+        else:
+            sections.append("  Directory: NOT FOUND (run setup_project to install)")
+    else:
+        sections.append("  (no active project)")
+
+    return sections
+
+
+def _build_instances_section(state) -> list[str]:
+    """Build [UE Instances] section."""
+    sections = ["\n[UE Instances]"]
+    instances = state.list_instances()
+    if instances:
+        active_inst = state.get_active_instance()
+        active_key = active_inst.key if active_inst else ""
+        for inst in instances:
+            marker = "*" if inst.key == active_key else " "
+            sections.append(
+                f"  {marker} {inst.key}: "
+                f"{inst.status.upper()}, PID={inst.pid or '?'}"
+            )
+            if inst.project_path:
+                sections.append(f"    Project: {inst.project_path}")
+            sections.append(f"    Last seen: {inst.last_seen or 'never'}")
+            if inst.crash_count:
+                sections.append(f"    Crashes: {inst.crash_count}")
+            sections.append(
+                f"    Tool calls: {len(inst.call_history)}, "
+                f"Notes: {len(inst.notes)}"
+            )
+    else:
+        sections.append("  No instances registered. Run discover_instances().")
+    return sections
+
+
+async def _build_eca_section(state, get_client_fn) -> list[str]:
+    """Build [ECA Bridge] section."""
+    import json as _json
+    from unrealhub.tools.discovery_tools import probe_unreal_mcp
+
+    sections = ["\n[ECA Bridge]"]
+    active_inst = state.get_active_instance()
+    if active_inst and active_inst.status == "online":
+        try:
+            client = get_client_fn(None)
+            if client:
+                result = await client.call_tool(
+                    "call_dispatch_tool",
+                    {"domain": "eca", "tool_name": "eca_status", "arguments": "{}"},
+                )
+                if result.get("success"):
+                    eca_text = ""
+                    for item in result.get("content", []):
+                        if isinstance(item, dict) and item.get("type") == "text":
+                            eca_text = item.get("text", "")
+                            break
+                    if eca_text:
+                        eca_data = _json.loads(eca_text)
+                        if eca_data.get("available"):
+                            cmd_count = eca_data.get("command_count", 0)
+                            cat_count = len(eca_data.get("categories", []))
+                            sections.append(
+                                f"  Status: AVAILABLE via RemoteMCP"
+                                f" ({cmd_count} commands, {cat_count} categories)"
+                            )
+                        else:
+                            sections.append(
+                                f"  Status: NOT AVAILABLE"
+                                f" ({eca_data.get('message', 'unknown reason')})"
+                            )
+                    else:
+                        sections.append("  Status: UNKNOWN (empty response)")
+                else:
+                    sections.append("  Status: UNKNOWN (eca_status call failed)")
+            else:
+                sections.append("  Status: UNKNOWN (no client)")
+        except Exception:
+            sections.append("  Status: UNKNOWN (query error)")
+    else:
+        sections.append("  Status: UNKNOWN (no active UE instance online)")
+
+    eca_direct = await probe_unreal_mcp("http://localhost:3000/mcp", timeout=2.0)
+    if eca_direct:
+        sections.append(
+            f"  Direct endpoint: http://localhost:3000/mcp ONLINE"
+            f" ({eca_direct.get('server_name', '?')})"
+        )
+    else:
+        sections.append("  Direct endpoint: http://localhost:3000/mcp (not detected)")
+    return sections
+
+
+def _build_watcher_section(watcher) -> list[str]:
+    """Build [ProcessWatcher] section."""
+    sections = ["\n[ProcessWatcher]"]
+    thread = watcher._thread
+    running = thread is not None and thread.is_alive()
+    sections.append(f"  Status: {'RUNNING' if running else 'STOPPED'}")
+    sections.append(f"  Interval: {watcher._interval}s")
+    return sections
+
+
 def create_hub_mcp() -> FastMCP:
     mcp = FastMCP(
         "UnrealMCPHub",
@@ -246,141 +382,16 @@ def create_hub_mcp() -> FastMCP:
     @mcp.tool()
     async def hub_status() -> str:
         """One-stop overview of the entire Hub state: project config, plugin install,
-        UE instances, ProcessWatcher status, and plugin source config."""
-        from pathlib import Path
-
+        UE instances, ECA Bridge status, and ProcessWatcher."""
         config = get_config()
         state = get_state()
         watcher = get_watcher()
 
         sections: list[str] = ["=== UnrealMCPHub Status ==="]
-
-        # --- Project Config ---
-        sections.append("\n[Project Config]")
-        if config.is_configured():
-            active_name = config.get_active_project_name()
-            for name, entry in config.list_projects().items():
-                marker = " *" if name == active_name else "  "
-                sections.append(
-                    f" {marker}{name}: {entry.uproject_path}\n"
-                    f"    Engine: {entry.engine_root} ({entry.engine_association or 'custom'})\n"
-                    f"    MCP Port: {entry.mcp_port}"
-                )
-        else:
-            sections.append("  No project configured. Run setup_project().")
-
-        # --- Plugin Source ---
-        from unrealhub.config import PLUGIN_TAG
-        sections.append("\n[Plugin Source]")
-        sections.append(f"  Pinned tag: {PLUGIN_TAG}")
-        sections.append(f"  Repo: {config.get_plugin_repo()}")
-        cache = config.get_plugin_cache()
-        sections.append(f"  Local cache: {cache or '(none)'}")
-
-        # --- Plugin Install Status ---
-        sections.append("\n[Plugin Install]")
-        proj = config.get_active_project()
-        if proj:
-            project_dir = Path(proj.uproject_path).parent
-            plugin_dir = project_dir / "Plugins" / "RemoteMCP"
-            if plugin_dir.exists() and (plugin_dir / "RemoteMCP.uplugin").exists():
-                sections.append("  Directory: INSTALLED")
-                python_dir = plugin_dir / "Content" / "Python"
-                has_deps = (python_dir / "Lib" / "site-packages" / "mcp").exists()
-                sections.append(f"  Python deps: {'INSTALLED' if has_deps else 'MISSING'}")
-            else:
-                sections.append("  Directory: NOT FOUND (run setup_project to install)")
-        else:
-            sections.append("  (no active project)")
-
-        # --- UE Instances ---
-        sections.append("\n[UE Instances]")
-        instances = state.list_instances()
-        if instances:
-            active_inst = state.get_active_instance()
-            active_key = active_inst.key if active_inst else ""
-            for inst in instances:
-                marker = "*" if inst.key == active_key else " "
-                sections.append(
-                    f"  {marker} {inst.key}: "
-                    f"{inst.status.upper()}, PID={inst.pid or '?'}"
-                )
-                if inst.project_path:
-                    sections.append(f"    Project: {inst.project_path}")
-                sections.append(f"    Last seen: {inst.last_seen or 'never'}")
-                if inst.crash_count:
-                    sections.append(f"    Crashes: {inst.crash_count}")
-                sections.append(
-                    f"    Tool calls: {len(inst.call_history)}, "
-                    f"Notes: {len(inst.notes)}"
-                )
-        else:
-            sections.append("  No instances registered. Run discover_instances().")
-
-        # --- ECA Bridge ---
-        sections.append("\n[ECA Bridge]")
-        active_inst = state.get_active_instance()
-        if active_inst and active_inst.status == "online":
-            try:
-                eca_client = get_client(None)
-                if eca_client:
-                    eca_result = await eca_client.call_tool(
-                        "call_dispatch_tool",
-                        {
-                            "domain": "eca",
-                            "tool_name": "eca_status",
-                            "arguments": "{}",
-                        },
-                    )
-                    if eca_result.get("success"):
-                        import json as _json
-                        eca_text = ""
-                        for item in eca_result.get("content", []):
-                            if isinstance(item, dict) and item.get("type") == "text":
-                                eca_text = item.get("text", "")
-                                break
-                        if eca_text:
-                            eca_data = _json.loads(eca_text)
-                            if eca_data.get("available"):
-                                cmd_count = eca_data.get("command_count", 0)
-                                cat_count = len(eca_data.get("categories", []))
-                                sections.append(
-                                    f"  Status: AVAILABLE via RemoteMCP"
-                                    f" ({cmd_count} commands, {cat_count} categories)"
-                                )
-                            else:
-                                sections.append(
-                                    f"  Status: NOT AVAILABLE"
-                                    f" ({eca_data.get('message', 'unknown reason')})"
-                                )
-                        else:
-                            sections.append("  Status: UNKNOWN (empty response)")
-                    else:
-                        sections.append("  Status: UNKNOWN (eca_status call failed)")
-                else:
-                    sections.append("  Status: UNKNOWN (no client)")
-            except Exception:
-                sections.append("  Status: UNKNOWN (query error)")
-        else:
-            sections.append("  Status: UNKNOWN (no active UE instance online)")
-
-        # Lightweight direct probe of ECA standalone endpoint
-        from unrealhub.tools.discovery_tools import probe_unreal_mcp
-        eca_direct = await probe_unreal_mcp("http://localhost:3000/mcp", timeout=2.0)
-        if eca_direct:
-            sections.append(
-                f"  Direct endpoint: http://localhost:3000/mcp ONLINE"
-                f" ({eca_direct.get('server_name', '?')})"
-            )
-        else:
-            sections.append("  Direct endpoint: http://localhost:3000/mcp (not detected)")
-
-        # --- ProcessWatcher ---
-        sections.append("\n[ProcessWatcher]")
-        thread = watcher._thread
-        running = thread is not None and thread.is_alive()
-        sections.append(f"  Status: {'RUNNING' if running else 'STOPPED'}")
-        sections.append(f"  Interval: {watcher._interval}s")
+        sections.extend(_build_project_section(config))
+        sections.extend(_build_instances_section(state))
+        sections.extend(await _build_eca_section(state, get_client))
+        sections.extend(_build_watcher_section(watcher))
 
         return "\n".join(sections)
 
