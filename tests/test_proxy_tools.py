@@ -269,3 +269,45 @@ class TestCrashGuard:
         result = await tools["ue_call"]("ok_tool", {})
         assert "all good" in result
         assert "CRASHED" not in result
+
+
+class TestUeCallDomainHint:
+    @pytest.mark.asyncio
+    @patch("unrealhub.utils.process.is_process_alive", return_value=True)
+    async def test_bad_domain_gives_hint(self, _mock_alive, tmp_home):
+        """错误的 domain 名返回引导提示。"""
+        tools, mock_client, store = _make_online_proxy()
+        mock_client.call_tool = AsyncMock(return_value={
+            "success": False,
+            "content": [{"type": "text", "text": "Unknown domain: typo"}],
+            "error": "Unknown domain: typo",
+        })
+        result = await tools["ue_call"]("some_tool", {}, "typo")
+        assert "ue_list_domains()" in result
+        assert "typo" in result
+
+    @pytest.mark.asyncio
+    async def test_valid_domain_no_hint(self, tmp_home):
+        """正确的 domain 调用成功时不追加提示。"""
+        tools, mock_client, store = _make_online_proxy()
+        mock_client.call_tool = AsyncMock(return_value={
+            "success": True,
+            "content": [{"type": "text", "text": "ok"}],
+            "error": None,
+        })
+        result = await tools["ue_call"]("some_tool", {}, "level")
+        assert "ue_list_domains()" not in result
+        assert "ok" in result
+
+    @pytest.mark.asyncio
+    @patch("unrealhub.utils.process.is_process_alive", return_value=True)
+    async def test_non_domain_error_no_hint(self, _mock_alive, tmp_home):
+        """非 domain 相关的错误不追加 domain 提示。"""
+        tools, mock_client, store = _make_online_proxy()
+        mock_client.call_tool = AsyncMock(return_value={
+            "success": False,
+            "content": [{"type": "text", "text": "Timeout connecting to UE"}],
+            "error": "Timeout",
+        })
+        result = await tools["ue_call"]("some_tool", {}, "level")
+        assert "ue_list_domains()" not in result

@@ -375,7 +375,17 @@ def register_proxy_tools(mcp: FastMCP, get_state, get_client) -> None:
         if crash_msg:
             return crash_msg
 
-        return _format_tool_result(result)
+        formatted = _format_tool_result(result)
+
+        if not result.get("success") and domain:
+            lower = formatted.lower()
+            if "unknown" in lower or "not found" in lower:
+                formatted += (
+                    f"\n\nHint: domain='{domain}' may not exist. "
+                    f"Use ue_list_domains() to see available domains."
+                )
+
+        return formatted
 
     @mcp.tool()
     async def ue_run_python(script: str) -> str:
