@@ -21,3 +21,6 @@ docs/unreal-ai-playbook/artifacts/
 tools/*
 !tools/run-unrealhub-source.bat
 !tools/run_unrealhub_source.py
+
+# Private project-specific skills (contain internal paths, P4 addresses, etc.)
+skills/z2-project-profile/

@@ -7,16 +7,19 @@ Works with **[RemoteMCP](https://github.com/blackplume233/UnrealRemoteMCP)** (UE
 ```
 AI Agent ──► UnrealMCPHub ──► UE Editor + RemoteMCP plugin
               (this repo)       (blackplume233/UnrealRemoteMCP)
+                                    └── ECABridge (238+ atomic commands)
 ```
 
-> **RemoteMCP** runs **inside** UE Editor and provides 17+ tools across 6 domains (level, blueprint, umg, edgraph, behaviortree, slate).
+> **RemoteMCP** runs **inside** UE Editor and provides 22+ tools across 7 domains (level, blueprint, umg, edgraph, behaviortree, slate, eca).
+> **ECABridge** is an engine-level experimental plugin providing 238+ C++ atomic commands, accessed through RemoteMCP's `eca` domain.
 > **UnrealMCPHub** runs **outside** UE Editor and can compile, launch, monitor, and proxy — even when UE is not running.
 
-## How It Works With UnrealRemoteMCP
+## How It Works
 
 `UnrealMCPHub` and `UnrealRemoteMCP` are complementary layers, not competing projects.
 
 - **UnrealRemoteMCP** lives inside Unreal Editor and exposes engine-facing tools.
+- **ECABridge** (engine built-in) provides 238+ atomic C++ commands for Mesh, Niagara, Material, BlueprintLisp, MVVM, WidgetTree, etc.
 - **UnrealMCPHub** lives outside Unreal Editor and manages the development lifecycle around those tools.
 
 In practice, the flow looks like this:
@@ -24,98 +27,37 @@ In practice, the flow looks like this:
 1. The AI client connects to `UnrealMCPHub`.
 2. The Hub configures the Unreal project, installs or verifies the plugin, compiles, and launches the editor when needed.
 3. Once the editor is ready, the Hub forwards UE-facing requests to `UnrealRemoteMCP`.
-4. `UnrealRemoteMCP` executes the actual in-editor work and returns results through the Hub.
+4. `UnrealRemoteMCP` executes the actual in-editor work (including ECA commands) and returns results through the Hub.
 
-This separation is the main reason the Hub is useful in production-like workflows:
-
-- `UnrealRemoteMCP` handles **tool execution inside UE**
-- `UnrealMCPHub` handles **project setup, process management, recovery, discovery, and routing**
-
-In short: `UnrealRemoteMCP` is the in-editor capability layer, while `UnrealMCPHub` is the control plane around it.
+In short: `UnrealRemoteMCP` is the in-editor capability layer, `ECABridge` is the atomic command library, and `UnrealMCPHub` is the control plane around them.
 
 ## About This Fork
 
-This fork keeps upstream UnrealMCPHub as the base, but adds a workflow and benchmark experimentation layer around it.
+This fork keeps upstream UnrealMCPHub as the base, adding:
 
-Compared with upstream, this fork currently adds:
+- **ECA Bridge awareness** — `hub_status` shows ECA availability, `help(topic="eca")` provides usage guide
+- **Team workflow docs** under [`docs/unreal-ai-playbook/`](./docs/unreal-ai-playbook/)
+- **Benchmark framework** under [`skills/ue-benchmark/`](./skills/ue-benchmark/) with scenario-based evaluation
+- **Enhanced Skills** — Part 10 (ECA Bridge) added to `use-unrealhub` SKILL.md
 
-- **Team workflow docs** under [`docs/unreal-ai-playbook/`](./docs/unreal-ai-playbook/) for sandbox rules, review flow, benchmark planning, and research notes
-- **A project-facing wrapper skill** under [`skills/team-unreal-workflow/`](./skills/team-unreal-workflow/) that narrows `use-unrealhub` into a safer day-to-day workflow
-- **A benchmark ladder** with lighter scenarios before the heavyweight `vampire-survivors-v1` benchmark
-- **Local experiment helpers** on the `codex/lab` branch for source-run and environment troubleshooting
+Branch roles:
 
-Recommended branch roles in this fork:
+- `main`: stable fork baseline tracking upstream + fork-approved changes
+- `feature/eca-awareness`: Sprint 3 — Hub ECA integration (tool descriptions, hub_status, SKILL.md)
 
-- `main`: the stable fork baseline that tracks upstream plus fork-approved documentation and workflow changes
-- `codex/lab`: the active working branch for experiments, benchmark tooling, validation utilities, and local integration work
-- `codex/team-workflow`: the branch that introduced the team workflow and documentation structure; keep it as a historical docs-oriented branch or reuse it only for large workflow-only reorganizations
-- `codex/pr-discovery-fallback`: a small upstream-friendly branch reserved for the discovery fallback fix, so it can stay clean and easy to propose upstream
-
-Optional branch:
-
-- `codex/benchmark`: use only if you want a separate branch dedicated to benchmark scenarios or benchmark-only iteration
-
-In short: upstream is the base product, while this fork is organized as a research and workflow-oriented variant for Unreal AI experimentation.
-
-## Fork Sync Strategy
-
-This fork is intended to stay compatible with upstream rather than diverge permanently.
-
-- `main` should stay close to upstream and receive only fork-approved workflow, documentation, and broadly useful improvements.
-- `codex/lab` remains the staging branch for research, gym iteration, automation experiments, and docs that are still moving quickly.
-- Small, generally useful fixes should be split into focused branches and proposed upstream when practical.
-- Fork-specific workflow assets, local evidence handling rules, and Gym research notes can stay in this fork even if they are never proposed upstream.
-
-Recommended sync loop:
-
-1. `fetch upstream`
-2. update local `main` from `upstream/main`
-3. merge the refreshed `main` back into `codex/lab`
-4. carve out small upstream-friendly branches only for changes that are clean and generally reusable
-
-In practice, that means:
-- treat this fork as the research/control-plane layer
-- treat upstream as the long-term compatibility baseline
-- avoid mixing local artifact decisions or team-specific workflow rules into upstream-facing changes
-
-## Benchmark Status
-
-This fork has now driven a `vampire-survivors-v1` style benchmark through a full validation ladder:
-
-- `L0` connectivity and preflight checks
-- `L1` sandbox authoring and verification
-- `L2` restricted gameplay-loop prototype
-- cold compile validation
-- successful `BuildCookRun`
-- packaged Windows build launch verification
-
-At the benchmark level, the current prototype has already demonstrated:
-
-- enemy spawning
-- auto-attacks and kill counting
-- XP drops and XP pickup flow
-- level-up triggers
-- upgrade application
-- HUD feedback
-- restart-capable survival loop scaffolding
-
-The important boundary is that this repository stores the workflow, benchmark tooling, reports, and sanitized artifacts. The Unreal sample project, gameplay prototype code, maps, packaged builds, and raw local logs stay outside this repo as external benchmark assets.
-
-See the benchmark write-up and artifact boundary notes here:
-
-- [`docs/unreal-ai-playbook/vampire-survivors-benchmark-pass.zh-CN.md`](./docs/unreal-ai-playbook/vampire-survivors-benchmark-pass.zh-CN.md)
-- [`docs/unreal-ai-playbook/benchmark-artifact-guidelines.zh-CN.md`](./docs/unreal-ai-playbook/benchmark-artifact-guidelines.zh-CN.md)
 ## Features
 
 - **Project setup** – Configure `.uproject` once; engine auto-detected from registry
 - **Build & launch** – Compile via UBT, launch editor, wait for MCP readiness
 - **Plugin install** – One-click RemoteMCP installation (local copy or GitHub download)
-- **Instance discovery** — Scan ports to find running UE editors
-- **UE tool proxy** — `ue_run_python`, `ue_call`, `ue_list_tools` and domain dispatch
-- **Crash resilience** — Crash detection, report retrieval, restart flow
-- **Multi-instance** — Switch between multiple UE editors via `use_editor`
+- **Instance discovery** — Two-phase port scan + serverInfo verification + psutil process matching
+- **UE tool proxy** — `ue_run_python`, `ue_call`, `ue_list_tools`, `ue_list_domains` with domain dispatch
+- **ECA awareness** — `hub_status` shows ECA Bridge status (238+ commands, 19 categories)
+- **Crash resilience** — PID watcher, crash guard racing, crash log retrieval, restart flow
+- **Multi-instance** — Switch between multiple UE editors via `manage_instance`
 - **Session notes** — Persist context for crash recovery
-- **One-click overview** — `hub_status` shows project, plugin, instances, and watcher state
+- **One-click overview** — `hub_status` shows project, plugin, instances, ECA, and watcher state
+- **Help system** — `help(topic)` with 10 topics including ECA guide
 
 ## Quick Install
 
@@ -201,19 +143,11 @@ uv sync          # or: pip install -e .
 
 ## Quick Start
 
-### For AI Clients (Cursor / Claude / Codex app / Codex CLI / etc.)
+### For AI Clients (Cursor / Claude / CodeBuddy / Codex / etc.)
 
 This is the primary use case. Add UnrealMCPHub as an MCP server in any MCP-capable AI client, then let the agent handle the Unreal workflow through natural language.
 
-That includes tools such as:
-
-- Cursor
-- Claude Desktop
-- Codex app
-- Codex CLI
-- other MCP-compatible agent clients
-
-**Step 1: Install & Configure MCP** (see [Quick Install](#quick-install-30-seconds) above)
+**Step 1: Install & Configure MCP** (see [Quick Install](#quick-install) above)
 
 **HTTP mode** (for shared / remote / multi-client use):
 
@@ -237,32 +171,29 @@ Once configured, the AI agent has full access to all Hub tools. Example conversa
 
 ```
 You: "帮我编译并启动 UE 项目 D:/Projects/MyGame/MyGame.uproject"
-Agent: [calls setup_project, compile_project, launch_editor automatically]
+Agent: [calls setup_project, build_project, launch_editor automatically]
 
-You: "在 UE 里创建一个蓝图 Actor"
-Agent: [calls ue_get_dispatch to find blueprint tools, then ue_call_dispatch]
+You: "用 Blueprint Lisp 给 BP_Player 加一个 BeginPlay 事件"
+Agent: [calls ue_call with domain="eca", uses lisp_to_blueprint]
 
 You: "UE 崩溃了怎么办"
-Agent: [calls get_crash_report, shows crash info, offers restart_editor]
+Agent: [calls get_log(source="crash"), shows crash info, offers launch_editor(action="restart")]
 ```
 
 **Step 3: What happens behind the scenes**
 
 ```
 Agent → Hub (setup_project)     # One-time project config, persisted
-Agent → Hub (compile_project)   # Compiles via UBT, even without UE running
+Agent → Hub (build_project)     # Compiles via UBT, even without UE running
 Agent → Hub (launch_editor)     # Starts UE, waits for MCP readiness
-Agent → Hub (ue_run_python)     # Hub forwards to UE's RemoteMCP
+Agent → Hub (ue_call)           # Hub forwards to UE's RemoteMCP
                 ↓
-        UE Editor (plugin MCP endpoint)   # Executes Python, returns result
+        UE Editor (RemoteMCP endpoint)   # Executes tool, returns result
+                ↓
+        ECABridge (238+ commands)        # Accessed via RemoteMCP eca domain
 ```
 
 The agent only needs to know about the Hub — it never talks to UE directly.
-
-For Codex surfaces specifically:
-
-- **Codex app** can connect to the Hub as a local MCP server and use the same natural-language workflow as other MCP-enabled desktop clients.
-- **Codex CLI** can also work with this setup when its MCP configuration points at the same Hub server, which makes it useful for scripted or terminal-first Unreal workflows.
 
 ### AI Agent Decision Flow
 
@@ -270,9 +201,11 @@ For Codex surfaces specifically:
 Is project configured?
 ├── No  → Ask user for .uproject path → setup_project()
 └── Yes → Is UE Editor online?
-          ├── No  → Need plugin? → install_plugin() → compile_project() → launch_editor()
+          ├── No  → launch_editor() (auto-compiles first)
           └── Yes → Use ue_* tools directly
-                    └── Crashed? → get_crash_report() → restart_editor()
+                    ├── ue_list_domains() → discover available domains (incl. eca)
+                    ├── ue_call(domain="eca", ...) → 238+ ECA commands
+                    └── Crashed? → get_log(source="crash") → launch_editor(action="restart")
 ```
 
 ### For Humans (CLI)
@@ -293,30 +226,28 @@ unrealhub launch                                # Launch editor
 
 | Tool | Description |
 |------|-------------|
-| `setup_project` | Configure project path (once, persisted to `~/.unrealhub`) |
+| `setup_project` | One-stop project onboarding: configure + install plugin |
 | `get_project_config` | View current project configuration |
-| `hub_status` | One-stop overview of everything |
-| `compile_project` | Compile project via UBT |
-| `launch_editor` | Start UE Editor, wait for MCP readiness |
-| `restart_editor` | Restart a crashed editor |
-| `install_plugin` | Install RemoteMCP plugin |
-| `set_plugin_source` | Configure plugin download URL or local path |
-| `discover_instances` | Scan ports for running UE instances |
-| `use_editor` | Switch active UE instance (multi-instance) |
-| `get_crash_report` | Get crash details |
-| `add_note` / `get_notes` | Session notes for crash recovery context |
+| `remove_project` | Remove a project configuration |
+| `hub_status` | One-stop overview: project, plugin, instances, ECA, watcher |
+| `build_project` | Compile project via UBT (with streaming progress) |
+| `launch_editor` | Start/stop/restart UE Editor, wait for MCP readiness |
+| `discover_instances` | Two-phase port scan + auto-registration |
+| `manage_instance` | Register/unregister/switch active instance |
+| `get_instance_health` | Detailed health check (PID, CPU, memory, MCP probe) |
+| `get_log` | Read UBT, editor, or crash logs |
+| `add_note` / `get_session` | Session notes and call history for crash recovery |
+| `help` | Usage guide by topic (compile, launch, pie, slate, eca, etc.) |
 
 ### UE Proxy Tools (forwarded to active UE instance)
 
 | Tool | Description |
 |------|-------------|
-| `ue_run_python` | Execute Python script in UE |
-| `ue_call` | Call any UE MCP tool by name |
-| `ue_list_tools` | List all tools from UE instance |
-| `ue_get_dispatch` | List domain tools (level, blueprint, umg, etc.) |
-| `ue_call_dispatch` | Call a domain-specific tool |
-| `ue_test_state` | Test connection to UE |
-| `ue_status` | Get active instance status |
+| `ue_status` | Active instance status |
+| `ue_list_domains` | List all domains with descriptions (level, blueprint, ..., eca) |
+| `ue_list_tools` | List tools from UE instance (MCP-level or domain-specific) |
+| `ue_call` | Call any UE tool by name, with optional domain dispatch |
+| `ue_run_python` | Execute Python script in UE Editor |
 
 ## Architecture
 
@@ -331,34 +262,38 @@ unrealhub launch                                # Launch editor
                  ▼                               ▼                               ▼
          ┌───────────────┐              ┌───────────────┐              ┌───────────────┐
          │ Project Mgmt  │              │ Lifecycle     │              │ UE Proxy      │
-         │ setup_project │              │ compile       │              │ ue_run_python  │
-         │ install_plugin│              │ launch/restart│              │ ue_call        │
-         │ hub_status    │              │ discover      │              │ ue_list_tools  │
+         │ setup_project │              │ build_project │              │ ue_run_python  │
+         │ hub_status    │              │ launch_editor │              │ ue_call        │
+         │ help          │              │ discover      │              │ ue_list_domains│
          └───────────────┘              └───────┬───────┘              └───────┬───────┘
                  │                              │                              │
                  ▼                              │  Streamable HTTP             │
          ┌───────────────┐              ┌──────▼──────────────────────────────▼────────┐
-          │ ~/.unrealhub  │              │  UE Editor + RemoteMCP (runtime endpoint)      │
-         │ config.json   │              │  17+ tools: run_python, get_dispatch, etc.    │
-         │ state.json    │              │  6 domains: level, blueprint, umg, edgraph,   │
-         └───────────────┘              │             behaviortree, slate               │
+         │ ~/.unrealhub  │              │  UE Editor + RemoteMCP (port 8422)           │
+         │ config.json   │              │  22+ tools across 7 domains                  │
+         │ state.json    │              │  Domains: level, blueprint, umg, edgraph,    │
+         └───────────────┘              │           behaviortree, slate, eca            │
+                                        │                                              │
+                                        │  ECABridge (engine built-in, port 3000)      │
+                                        │  238+ atomic C++ commands, 19 categories     │
+                                        │  Accessed via RemoteMCP eca domain           │
                                         └──────────────────────────────────────────────┘
 ```
 
 ## Development
 
 ```bash
-git clone https://github.com/blackplume233/UnrealMCPHub.git
+git clone https://github.com/AlainChen/UnrealMCPHub.git
 cd UnrealMCPHub
 uv sync --extra dev      # Install with dev dependencies
-uv run pytest tests/ -v  # Run tests (129 tests)
+uv run pytest tests/ -v  # Run tests (216 tests)
 ```
 
 ## Requirements
 
 - Python >= 3.11
 - Unreal Engine 5.x
-- [RemoteMCP](https://github.com/blackplume233/UnrealRemoteMCP) — UE Editor plugin (Hub can auto-install it via `install_plugin`)
+- [RemoteMCP](https://github.com/blackplume233/UnrealRemoteMCP) — UE Editor plugin (Hub can auto-install it via `setup_project`)
 
 ## License
 
