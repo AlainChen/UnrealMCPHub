@@ -141,8 +141,23 @@ class UEPathResolver:
     }
 
     @staticmethod
-    def derive_paths(engine_root: str) -> dict[str, str]:
+    def _normalize_engine_root(engine_root: str) -> Path:
+        """Normalize engine_root so it never ends with 'Engine'.
+
+        Licensee source builds (e.g. E:\\YiningZ2\\Engine) store engine_root
+        *with* the trailing Engine directory, while Epic launcher installs
+        (e.g. C:\\Program Files\\Epic Games\\UE_5.7) do not.
+        All derive_paths / editor_exe_for_config callers expect the root
+        *without* Engine so they can append Engine/Binaries/... themselves.
+        """
         root = Path(engine_root)
+        if root.name == "Engine" and (root / "Binaries").is_dir():
+            root = root.parent
+        return root
+
+    @staticmethod
+    def derive_paths(engine_root: str) -> dict[str, str]:
+        root = UEPathResolver._normalize_engine_root(engine_root)
         return {
             "ubt_exe": str(
                 root / "Engine/Binaries/DotNET/UnrealBuildTool/UnrealBuildTool.exe"
@@ -169,7 +184,7 @@ class UEPathResolver:
                 f"Must be one of: {', '.join(UEPathResolver.VALID_BUILD_CONFIGS)}"
             )
 
-        root = Path(engine_root)
+        root = UEPathResolver._normalize_engine_root(engine_root)
         tag = UEPathResolver._PLATFORM_TAG.get(sys.platform, "Linux")
         ext = ".exe" if sys.platform == "win32" else ""
         bin_dir = root / "Engine" / "Binaries" / tag
